@@ -1,0 +1,1 @@
+po5/mpv_sponsorblock, commit 7785c1477103f2fafabfd65fdcf28ef26e6d7f0d (2023-01-30), GPL-3.0. Fetched 2026-10-28.
