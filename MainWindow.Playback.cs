@@ -277,17 +277,19 @@ public partial class MainWindow
     {
         if (_settingsWindow != null) { _settingsWindow.Activate(); return; }
         var win = new SettingsWindow(_settings, _bookmarks, () => _mpv?.GetAudioDevices() ?? new List<(string, string)>()) { Owner = this };
-        win.SettingChanged += _ => OnSettingChanged();
+        win.SettingChanged += name => OnSettingChanged(name);
         win.ToastPreviewRequested += ShowToastPreview;
         win.Closed += (_, _) => { _settingsWindow = null; BookmarkStore.Save(_bookmarks); };
         _settingsWindow = win;
         win.Show();
     }
 
-    private void OnSettingChanged()
+    private void OnSettingChanged(string? name = null)
     {
         _settings.Clamp();
         _settings.Save();
+        // 건너뛰기 간격은 테마·레이아웃·mpv 속성과 무관하다. 전부 다시 적용하면 재생 중 소리가 끊기거나 화면이 깜박인다
+        if (name == nameof(AppSettings.SeekSeconds)) { UpdateSeekButtons(); return; }
         ThemeManager.Apply(_settings.Theme);
         ApplyLayoutSettings();
         ApplyPlayerSettings();
@@ -361,7 +363,7 @@ public partial class MainWindow
     private void SetSeekSeconds(int sec)
     {
         _settings.SeekSeconds = sec;
-        OnSettingChanged(); // 범위 보정, 저장, 버튼 글자 갱신
+        OnSettingChanged(nameof(AppSettings.SeekSeconds)); // 범위 보정, 저장, 버튼 글자 갱신
         SeekValueBtn.Content = _settings.SeekSeconds + "초";
     }
 
@@ -380,9 +382,15 @@ public partial class MainWindow
     private void ShortcutKeyBridge(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (!_engineA || _mpv == null) return;
+        var focused = System.Windows.Input.Keyboard.FocusedElement;
         // 글자를 입력하거나 목록·콤보를 키로 고르는 중에는 가로채지 않는다
-        if (System.Windows.Input.Keyboard.FocusedElement is System.Windows.Controls.Primitives.TextBoxBase
+        if (focused is System.Windows.Controls.Primitives.TextBoxBase
             or System.Windows.Controls.ComboBox or System.Windows.Controls.ListBoxItem or System.Windows.Controls.ListBox) return;
+        // 메뉴·팝업은 별도 창(HwndSource)이라 포커스가 거기 있으면 그 안의 키 조작에 맡긴다
+        if (focused is System.Windows.Media.Visual fv
+            && System.Windows.PresentationSource.FromVisual(fv) != System.Windows.PresentationSource.FromVisual(this)) return;
+        // 포커스된 버튼의 Space 는 재생 토글이 아니라 그 버튼을 누르는 동작이어야 한다
+        if (e.Key == Key.Space && focused is System.Windows.Controls.Primitives.ButtonBase) return;
         var mods = System.Windows.Input.Keyboard.Modifiers;
         if ((mods & (ModifierKeys.Control | ModifierKeys.Alt | ModifierKeys.Windows)) != 0) return;
         bool shift = (mods & ModifierKeys.Shift) != 0;
@@ -867,7 +875,7 @@ public partial class MainWindow
     {
         var cur = System.Windows.Forms.Cursor.Position;
         if (cur != _fsCursor) { _fsCursor = cur; _fsLastMove = DateTime.UtcNow; ControlRow.Visibility = Visibility.Visible; return; }
-        bool busy = SpeedPopup.IsOpen || ControlRow.IsMouseOver;
+        bool busy = SpeedPopup.IsOpen || SeekPopup.IsOpen || ControlRow.IsMouseOver;
         if (!busy && (DateTime.UtcNow - _fsLastMove).TotalSeconds > _settings.FullscreenHideSec)
             ControlRow.Visibility = Visibility.Collapsed;
     }
