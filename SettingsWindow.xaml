@@ -115,6 +115,16 @@
                             </Grid>
                             <Grid Style="{StaticResource Row}">
                                 <StackPanel HorizontalAlignment="Left">
+                                    <TextBlock Text="건너뛰기 간격" Style="{StaticResource RowName}"/>
+                                    <TextBlock Text="좌우 방향키와 재생 줄의 -/+ 버튼이 움직이는 시간입니다. Shift 를 함께 누르면 6배입니다." Style="{StaticResource RowHint}" MaxWidth="320"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                    <Slider x:Name="SeekSecSlider" Style="{StaticResource PlayerSlider}" Width="170" Minimum="1" Maximum="60" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="SeekSec_ValueChanged"/>
+                                    <TextBlock x:Name="SeekSecText" Style="{StaticResource ValueText}"/>
+                                </StackPanel>
+                            </Grid>
+                            <Grid Style="{StaticResource Row}">
+                                <StackPanel HorizontalAlignment="Left">
                                     <TextBlock Text="이어 보기" Style="{StaticResource RowName}"/>
                                     <TextBlock Text="영상을 다시 열면 마지막으로 본 위치부터 재생합니다(1분 이상 영상)." Style="{StaticResource RowHint}" MaxWidth="320"/>
                                 </StackPanel>

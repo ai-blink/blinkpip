@@ -127,8 +127,43 @@
                 </Button>
                 <Button x:Name="StopBtn" Grid.Column="3" Style="{StaticResource PicButton}" Click="StopBtn_Click" ToolTip="정지 (처음 위치로)"><Image Source="Assets/icons/stop.png" Width="20" Height="20" RenderOptions.BitmapScalingMode="HighQuality"/></Button>
                 <Button x:Name="NextBtn" Grid.Column="4" Style="{StaticResource PicButton}" Click="NextBtn_Click" ToolTip="다음 파일"><Image Source="Assets/icons/next.png" Width="20" Height="20" RenderOptions.BitmapScalingMode="HighQuality"/></Button>
-                <TextBlock x:Name="TimeText" Grid.Column="5" Text="0:00 / 0:00" Foreground="{DynamicResource SubTextBrush}" FontSize="12"
-                           Margin="6,0" VerticalAlignment="Center" MinWidth="80" TextAlignment="Center"/>
+                <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- 탐색 묶음 하나: [‹ N초 뒤로] [현재 시간] [N초 앞으로 ›] [▾ 간격 변경]. 화살표 방향이 곧 이동 방향 -->
+                    <Border Background="{DynamicResource FieldBrush}" BorderBrush="#33FFFFFF" BorderThickness="1" CornerRadius="6" Margin="4,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Button x:Name="SeekBackBtn" Style="{StaticResource PicButton}" Width="Auto" MinWidth="44" Height="26" Padding="6,0" Click="SeekBackBtn_Click" MouseRightButtonUp="SeekBtn_RightClick">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE76B;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="SeekBackText" Text="5" FontFamily="Segoe UI" FontSize="13" FontWeight="Bold" Margin="3,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Border Width="1" Margin="0,5" Background="#33FFFFFF"/>
+                            <TextBlock x:Name="TimeText" Text="0:00 / 0:00" Foreground="{DynamicResource SubTextBrush}" FontSize="12"
+                                       Margin="6,0" VerticalAlignment="Center" MinWidth="80" TextAlignment="Center"/>
+                            <Border Width="1" Margin="0,5" Background="#33FFFFFF"/>
+                            <Button x:Name="SeekFwdBtn" Style="{StaticResource PicButton}" Width="Auto" MinWidth="44" Height="26" Padding="6,0" Click="SeekFwdBtn_Click" MouseRightButtonUp="SeekBtn_RightClick">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="SeekFwdText" Text="5" FontFamily="Segoe UI" FontSize="13" FontWeight="Bold" Margin="0,0,3,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Border Width="1" Margin="0,5" Background="#33FFFFFF"/>
+                            <Button x:Name="SeekCfgBtn" Style="{StaticResource PicButton}" Content="&#xE70D;" FontSize="10" Width="22" Height="26" Click="SeekCfgBtn_Click" ToolTip="건너뛰기 간격 변경"/>
+                        </StackPanel>
+                    </Border>
+                    <Popup x:Name="SeekPopup" PlacementTarget="{Binding ElementName=TimeText}" Placement="Top" StaysOpen="False" AllowsTransparency="True">
+                        <Border Background="{DynamicResource FieldBrush}" BorderBrush="#33FFFFFF" BorderThickness="1" CornerRadius="10" Padding="8" Margin="0,0,0,6">
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="-5" Tag="-5" Click="SeekStep_Click" Margin="2,0"/>
+                                <Button Content="-1" Tag="-1" Click="SeekStep_Click" Margin="2,0"/>
+                                <Button x:Name="SeekValueBtn" Content="5초" Click="SeekReset_Click" Style="{StaticResource GhostButton}" MinWidth="64" FontWeight="Bold"
+                                        Foreground="{DynamicResource AccentBrush}" ToolTip="누르면 5초로"/>
+                                <Button Content="+1" Tag="1" Click="SeekStep_Click" Margin="2,0"/>
+                                <Button Content="+5" Tag="5" Click="SeekStep_Click" Margin="2,0"/>
+                            </StackPanel>
+                        </Border>
+                    </Popup>
+                </StackPanel>
                 <Slider x:Name="SeekSlider" Grid.Column="6" Style="{StaticResource PlayerSlider}" Minimum="0" Maximum="1" ValueChanged="SeekSlider_ValueChanged"
                         PreviewMouseMove="SeekSlider_PreviewMouseMove" VerticalAlignment="Center"/>
                 <Button x:Name="SpeedBtn" Grid.Column="7" Style="{StaticResource PicButton}" Width="Auto" MinWidth="52" Padding="4,0" Click="SpeedBtn_Click" Margin="6,0,0,0" ToolTip="재생 속도">

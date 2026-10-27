@@ -57,6 +57,20 @@ public class MpvPlayer : IDisposable
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)] private static extern IntPtr mpv_error_string(int error);
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)] private static extern void mpv_terminate_destroy(IntPtr ctx);
 
+    // 영상 창 포커스일 때 받을 키 -> 호스트 동작 id (WPF 포커스일 때의 키는 MainWindow.Playback.cs 의 ShortcutKeyBridge)
+    private static readonly (string Key, string Id, bool Repeat)[] HostKeys =
+    {
+        ("SPACE", "hpp-play", false),
+        ("LEFT", "hpp-seekb", true), ("RIGHT", "hpp-seekf", true),
+        ("Shift+LEFT", "hpp-seekbl", true), ("Shift+RIGHT", "hpp-seekfl", true),
+        ("UP", "hpp-volup", true), ("DOWN", "hpp-voldn", true),
+        ("m", "hpp-mute", false),
+        ("PGUP", "hpp-prev", false), ("PGDWN", "hpp-next", false),
+        ("[", "hpp-slower", true), ("]", "hpp-faster", true), ("BS", "hpp-speed1", false),
+        (",", "hpp-fback", true), (".", "hpp-fstep", true),
+        ("s", "hpp-shot", false), ("l", "hpp-list", false),
+    };
+
     public MpvPlayer(IntPtr renderHwnd)
     {
         string dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HybridPipPlayer");
@@ -101,6 +115,9 @@ public class MpvPlayer : IDisposable
         Command("keybind", "f", "script-message hpp-fullscreen");
         Command("keybind", "ESC", "script-message hpp-escape");
         Command("keybind", "Ctrl+,", "script-message hpp-settings");
+        // 재생 단축키는 건너뛰기 간격을 설정에서 바꿀 수 있어야 하므로 mpv 기본 동작 대신 호스트가 처리한다
+        foreach (var (key, id, repeat) in HostKeys)
+            Command("keybind", key, (repeat ? "repeatable " : "") + "script-message " + id);
         mpv_request_log_messages(_ctx, ToUtf8("warn"));
         _eventThread = new Thread(EventLoop) { IsBackground = true, Name = "mpv-events" };
         _eventThread.Start();
@@ -178,6 +195,8 @@ public class MpvPlayer : IDisposable
     public bool GetPaused() => GetProperty("pause") == "yes";
     public double? GetVolume() => GetDouble("volume");
     public void SeekTo(double seconds) => Command("seek", Inv(seconds), "absolute");
+    // exact: 기본 상대 이동은 가까운 키프레임으로 붙어서 5초 단위가 어긋난다(키프레임 간격이 긴 영상일수록 심함)
+    public void SeekRelative(double seconds) => Command("seek", Inv(seconds), "relative+exact");
     public void SetVolume(double percent) => SetProperty("volume", Inv(Math.Clamp(percent, 0, 100)));
     public void SetMute(bool mute) => SetProperty("mute", mute ? "yes" : "no");
     public bool GetMuted() => GetProperty("mute") == "yes";
@@ -402,7 +421,7 @@ public class MpvPlayer : IDisposable
                     if (cm.NumArgs >= 1 && cm.Args != IntPtr.Zero)
                     {
                         string? first = Marshal.PtrToStringUTF8(Marshal.ReadIntPtr(cm.Args));
-                        if (first is "hpp-fullscreen" or "hpp-escape" or "hpp-settings") KeyAction?.Invoke(first);
+                        if (first != null && first.StartsWith("hpp-", StringComparison.Ordinal)) KeyAction?.Invoke(first);
                     }
                     break;
                 case EVENT_FILE_LOADED:

@@ -43,6 +43,7 @@ public partial class MainWindow
     {
         ThemeManager.Apply(_settings.Theme);
         BookmarkBar.ItemsSource = _bookmarks;
+        UpdateSeekButtons();
         ApplyLayoutSettings();
         RebuildExtras();
 
@@ -290,6 +291,7 @@ public partial class MainWindow
         ThemeManager.Apply(_settings.Theme);
         ApplyLayoutSettings();
         ApplyPlayerSettings();
+        UpdateSeekButtons();
     }
 
     // ───────── 이어 보기 / 최근 ─────────
@@ -326,6 +328,141 @@ public partial class MainWindow
     {
         if (_engineA) { if (!string.IsNullOrEmpty(_mpv?.GetPath())) _mpv!.TogglePause(); }
         else RunOnVideo("v.paused ? v.play() : v.pause();");
+    }
+
+    // ───────── 재생 단축키 ─────────
+
+    private void SeekBackBtn_Click(object sender, RoutedEventArgs e) => RunKeyAction("hpp-seekb");
+    private void SeekFwdBtn_Click(object sender, RoutedEventArgs e) => RunKeyAction("hpp-seekf");
+
+    // 건너뛰기 간격 팝업(속도 팝업과 같은 방식): -N / +N 버튼을 우클릭하면 열린다
+    private void SeekBtn_RightClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        OpenSeekPopup();
+        e.Handled = true;
+    }
+
+    private void SeekCfgBtn_Click(object sender, RoutedEventArgs e) => OpenSeekPopup();
+
+    private void OpenSeekPopup()
+    {
+        SeekValueBtn.Content = _settings.SeekSeconds + "초";
+        SeekPopup.IsOpen = true;
+    }
+
+    private void SeekStep_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not System.Windows.Controls.Button { Tag: string tag } || !int.TryParse(tag, out int d)) return;
+        SetSeekSeconds(_settings.SeekSeconds + d);
+    }
+
+    private void SeekReset_Click(object sender, RoutedEventArgs e) => SetSeekSeconds(5);
+
+    private void SetSeekSeconds(int sec)
+    {
+        _settings.SeekSeconds = sec;
+        OnSettingChanged(); // 범위 보정, 저장, 버튼 글자 갱신
+        SeekValueBtn.Content = _settings.SeekSeconds + "초";
+    }
+
+    // 탐색 버튼의 글자와 설명을 설정의 건너뛰기 간격에 맞춘다
+    private void UpdateSeekButtons()
+    {
+        int n = _settings.SeekSeconds;
+        SeekBackText.Text = n.ToString();
+        SeekFwdText.Text = n.ToString();
+        SeekBackBtn.ToolTip = $"{n}초 뒤로 (←, Shift+← 는 {n * 6}초) · 우클릭: 간격 변경";
+        SeekFwdBtn.ToolTip = $"{n}초 앞으로 (→, Shift+→ 는 {n * 6}초) · 우클릭: 간격 변경";
+    }
+
+    // 키보드 포커스가 WPF 쪽에 있을 때(버튼·슬라이더를 누른 직후 등)의 재생 단축키. 영상 창에 포커스가 있으면
+    // MpvPlayer 의 keybind 가 같은 id 로 RunKeyAction 을 부른다. 웹뷰(OTT)는 OttKeyBridge 가 맡는다.
+    private void ShortcutKeyBridge(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (!_engineA || _mpv == null) return;
+        // 글자를 입력하거나 목록·콤보를 키로 고르는 중에는 가로채지 않는다
+        if (System.Windows.Input.Keyboard.FocusedElement is System.Windows.Controls.Primitives.TextBoxBase
+            or System.Windows.Controls.ComboBox or System.Windows.Controls.ListBoxItem or System.Windows.Controls.ListBox) return;
+        var mods = System.Windows.Input.Keyboard.Modifiers;
+        if ((mods & (ModifierKeys.Control | ModifierKeys.Alt | ModifierKeys.Windows)) != 0) return;
+        bool shift = (mods & ModifierKeys.Shift) != 0;
+        string? id = e.Key switch
+        {
+            Key.Space => "hpp-play",
+            Key.Left => shift ? "hpp-seekbl" : "hpp-seekb",
+            Key.Right => shift ? "hpp-seekfl" : "hpp-seekf",
+            Key.Up => "hpp-volup",
+            Key.Down => "hpp-voldn",
+            Key.M => "hpp-mute",
+            Key.PageUp => "hpp-prev",
+            Key.PageDown => "hpp-next",
+            Key.OemOpenBrackets => "hpp-slower",
+            Key.OemCloseBrackets => "hpp-faster",
+            Key.Back => "hpp-speed1",
+            Key.OemComma => "hpp-fback",
+            Key.OemPeriod => "hpp-fstep",
+            Key.S => "hpp-shot",
+            Key.L => "hpp-list",
+            Key.F or Key.F11 => "hpp-fullscreen",
+            Key.Escape when _isFullscreen => "hpp-escape",
+            _ => null,
+        };
+        if (id == null) return;
+        e.Handled = true;
+        // 꾹 눌러 반복되는 것은 건너뛰기·볼륨·속도·프레임 이동만
+        if (e.IsRepeat && id is "hpp-play" or "hpp-mute" or "hpp-prev" or "hpp-next" or "hpp-speed1" or "hpp-shot" or "hpp-list" or "hpp-fullscreen" or "hpp-escape") return;
+        if (id == "hpp-fullscreen") ToggleFullscreen();
+        else if (id == "hpp-escape") ExitFullscreen();
+        else RunKeyAction(id);
+    }
+
+    private void RunKeyAction(string id)
+    {
+        if (_mpv == null || !_engineA) return;
+        switch (id)
+        {
+            case "hpp-play": PlayPauseBtn_Click(PlayPauseBtn, new RoutedEventArgs()); break;
+            case "hpp-seekb": SeekBy(-_settings.SeekSeconds); break;
+            case "hpp-seekf": SeekBy(_settings.SeekSeconds); break;
+            case "hpp-seekbl": SeekBy(-_settings.SeekSeconds * 6); break;
+            case "hpp-seekfl": SeekBy(_settings.SeekSeconds * 6); break;
+            case "hpp-volup": StepVolume(5); break;
+            case "hpp-voldn": StepVolume(-5); break;
+            case "hpp-mute": SetMuted(!_muted); break;
+            case "hpp-prev": PrevBtn_Click(PrevBtn, new RoutedEventArgs()); break;
+            case "hpp-next": NextBtn_Click(NextBtn, new RoutedEventArgs()); break;
+            case "hpp-slower": StepSpeed(-0.25); break;
+            case "hpp-faster": StepSpeed(0.25); break;
+            case "hpp-speed1": _mpv.SetSpeed(1.0); PlayTick(); _mpv.Command("show-text", "속도 1×", "800"); break;
+            case "hpp-fback": RunFeature("fback"); break;
+            case "hpp-fstep": RunFeature("fstep"); break;
+            case "hpp-shot": RunFeature("shot"); break;
+            case "hpp-list": ListBtn_Click(ListBtn, new RoutedEventArgs()); break;
+        }
+    }
+
+    private void SeekBy(double seconds)
+    {
+        if (_mpv == null || string.IsNullOrEmpty(_mpv.GetPath())) return;
+        _mpv.SeekRelative(seconds);
+        _mpv.Command("show-text", (seconds < 0 ? "-" : "+") + Math.Abs(seconds).ToString("0.#") + "초", "700");
+        PlayTick();
+    }
+
+    private void StepVolume(double delta)
+    {
+        double v = Math.Clamp(VolumeSlider.Value + delta, 0, 100);
+        VolumeSlider.Value = v; // ValueChanged 가 mpv 에 반영한다
+        _mpv?.Command("show-text", "볼륨 " + v.ToString("0"), "700");
+    }
+
+    private void StepSpeed(double delta)
+    {
+        if (_mpv == null) return;
+        double sp = Math.Clamp(Math.Round(((_mpv.GetSpeed() ?? 1) + delta) * 100) / 100, 0.25, 4.0);
+        _mpv.SetSpeed(sp);
+        PlayTick();
+        _mpv.Command("show-text", "속도 " + sp.ToString("0.##") + "×", "800");
     }
 
     private void StopBtn_Click(object sender, RoutedEventArgs e)

@@ -48,6 +48,7 @@ public partial class SettingsWindow : Window
         PosTop.IsChecked = _s.ControlBarPosition == "top";
         VolSlider.Value = _s.DefaultVolume;
         FsHideSlider.Value = _s.FullscreenHideSec;
+        SeekSecSlider.Value = _s.SeekSeconds;
         PipWidthSlider.Value = _s.PipWidth;
         PipHideSlider.Value = _s.PipHideSec;
         SubSizeSlider.Value = _s.SubFontSize;
@@ -72,6 +73,10 @@ public partial class SettingsWindow : Window
             ("Ctrl + ,", "설정 열기"), ("Ctrl+Alt+P", "PIP 켜기/끄기"), ("Ctrl+Alt+L", "PIP 잠금"),
             ("Ctrl+Alt+C", "클릭 투과"), ("Ctrl+Alt+B", "배경화면 모드"), ("Ctrl+Alt+G", "앰비언트 글로우"),
             ("Ctrl+Alt+↑ / ↓", "자막 크기"), ("F11 · f · Esc", "전체 화면 켜기/끄기"),
+            ("Space", "재생 / 일시정지"), ("← / →", "뒤로 / 앞으로 건너뛰기 (Shift: 6배)"),
+            ("↑ / ↓", "볼륨 ±5"), ("m", "음소거"), ("PageUp / PageDown", "이전 / 다음 파일"),
+            ("[ / ] / Backspace", "속도 -0.25 / +0.25 / 1×"), (", / .", "한 프레임 뒤 / 앞"),
+            ("s", "스크린샷"), ("l", "재생 목록 패널"), ("Ctrl+↑ / ↓ (영상 창)", "mpv 자막 크기"),
         })
         {
             var row = new Grid { Margin = new Thickness(0, 0, 0, 5) };
@@ -99,6 +104,7 @@ public partial class SettingsWindow : Window
     {
         VolText.Text = $"{VolSlider.Value:0}";
         FsHideText.Text = $"{FsHideSlider.Value:0.#}초";
+        SeekSecText.Text = $"{SeekSecSlider.Value:0}초";
         PipWidthText.Text = $"{PipWidthSlider.Value:0}";
         PipHideText.Text = $"{PipHideSlider.Value:0.#}초";
         SubSizeText.Text = $"{SubSizeSlider.Value:0}";
@@ -178,6 +184,14 @@ public partial class SettingsWindow : Window
         UpdateValueTexts();
         _s.FullscreenHideSec = FsHideSlider.Value;
         Changed(nameof(AppSettings.FullscreenHideSec));
+    }
+
+    private void SeekSec_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_loading) return; // XAML 파싱 중 Minimum 보정으로 먼저 호출될 수 있다(아직 없는 요소를 건드리지 않게)
+        UpdateValueTexts();
+        _s.SeekSeconds = (int)Math.Round(SeekSecSlider.Value);
+        Changed(nameof(AppSettings.SeekSeconds));
     }
 
     private void SpeedPick_Click(object sender, RoutedEventArgs e) =>

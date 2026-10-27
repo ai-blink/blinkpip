@@ -15,6 +15,7 @@ public sealed class AppSettings
     public double FullscreenHideSec { get; set; } = 2.5;       // 전체 화면에서 컨트롤이 사라질 때까지(초)
     public bool ResumePlayback { get; set; } = true;           // 이어 보기: 다시 열면 마지막 위치부터
     public bool AutoPlaylist { get; set; } = true;             // 로컬 파일을 열면 같은 폴더의 미디어를 재생 목록으로
+    public int SeekSeconds { get; set; } = 5;                  // 좌우 방향키·탐색 버튼의 건너뛰기 간격(초). Shift 는 6배
     // 모양
     public string Theme { get; set; } = "B";                   // A | B | C (ThemeManager)
     public bool ShowBookmarks { get; set; } = true;
@@ -64,6 +65,7 @@ public sealed class AppSettings
     public void Clamp()
     {
         if (ControlBarPosition != "top") ControlBarPosition = "bottom";
+        SeekSeconds = Math.Clamp(SeekSeconds, 1, 60);
         DefaultVolume = Math.Clamp(DefaultVolume, 0, 100);
         DefaultSpeed = Math.Clamp(double.IsFinite(DefaultSpeed) ? DefaultSpeed : 1.0, 0.5, 2.0);
         FullscreenHideSec = Math.Clamp(double.IsFinite(FullscreenHideSec) ? FullscreenHideSec : 2.5, 1.0, 10.0);

@@ -96,6 +96,7 @@ public partial class MainWindow : Window
         Closed += MainWindow_Closed;
         _tick.Tick += (_, _) => { AutoDodgeTick(); WallpaperPauseTick(); OverlayTick(); };
         PreviewKeyDown += OttKeyBridge;
+        PreviewKeyDown += ShortcutKeyBridge;
         LocationChanged += (_, _) => { if (_overlayVisible) PositionOverlay(); };
         SizeChanged += (_, _) => { if (_overlayVisible) PositionOverlay(); };
     }
@@ -144,7 +145,9 @@ public partial class MainWindow : Window
             {
                 if (_closing) return;
                 if (a == "hpp-fullscreen") ToggleFullscreen();
-                else if (a == "hpp-escape" && _isFullscreen) ExitFullscreen();
+                else if (a == "hpp-escape") { if (_isFullscreen) ExitFullscreen(); }
+                else if (a == "hpp-settings") OpenSettings();
+                else RunKeyAction(a);
             });
             _mpv.VideoAspectChanged += a => Dispatcher.BeginInvoke(() =>
             {
