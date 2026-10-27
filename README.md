@@ -36,7 +36,7 @@ WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 
 - `libmpv-2.dll` — 64비트. [shinchiro/mpv-winbuild-cmake](https://github.com/shinchiro/mpv-winbuild-cmake/releases) 의 `mpv-dev-x86_64-*.7z` 안에 있다. (실측: 20261021 빌드, 115 MB. 7-Zip이 없으면 윈도우 기본 `tar -xf`로도 풀린다)
 - `yt-dlp.exe` — [yt-dlp/yt-dlp](https://github.com/yt-dlp/yt-dlp/releases) 릴리스. (실측: 2026.10.26, 릴리스의 `SHA2-256SUMS`와 대조해 받는다)
 - WebView2 런타임(윈도우 11 기본 포함), SponsorBlock용 Python(`PATH` 또는 `C:\Python3xx`).
-- `scripts/` — [po5/mpv_sponsorblock](https://github.com/po5/mpv_sponsorblock) 사본(GPL-3.0). **지금은 없다**(복원 기록 참고). 다시 받아 `scripts/`에 두면 빌드 때 복사된다.
+- `scripts/` — [po5/mpv_sponsorblock](https://github.com/po5/mpv_sponsorblock) 사본(GPL-3.0, 커밋 `7785c14`, 저장소에 포함). 출처는 `scripts/SOURCE.txt`, 라이선스는 `scripts/LICENSE-sponsorblock.txt`. 빌드 때 출력 폴더로 복사된다.
 
 ## 빌드·실행
 
@@ -116,9 +116,18 @@ mpv 화면에서는 `Ctrl+↑/↓`(영상 창 포커스)로도 자막 크기를 
 - 캡처 버튼: 스크린샷 파일 생성, 토스트 표시(썸네일·파일 이름·폴더 열기), 약 8초 뒤 사라짐, "폴더 열기"가 저장 폴더로 탐색기를 열고 토스트를 닫음.
 - 알림 설정: 슬라이더 값이 `settings.json`에 저장되고, 3초·50%로 바꿔 미리 보기를 띄웠을 때 약 3초 뒤 사라지고 뒤 영상이 비쳐 보임.
 
+**2026-10-28 추가 실측** (UI Automation, 60초 시험 영상과 공개 유튜브 영상)
+- 북마크 추가(웹 주소만 받음, 로컬 경로는 안내 문구). 칩 우클릭이 PIP를 전환하던 문제는 상단 바 핸들러가 버튼 위 우클릭을 무시하게 고침(마우스로는 미확인).
+- 자막·소리·더보기 메뉴, 속도 팝업(+0.5 → 1.50×, 초기화 → 1.00×), 최근 재생 메뉴.
+- 이어 보기: 저장 조건이 `pos > 5`이고 `pos < 길이 - 10`이라 15초 이하 영상은 저장되지 않는다. 60초 영상에서 30초 저장, 다시 열면 그 위치부터 재생.
+- 화면 조절 밝기: 화면이 밝아지고 `settings.json`에 저장. 이퀄라이저는 저장만 확인(소리 변화는 미확인).
+- 리모컨 칸 편집: 칸을 바꾸면 `RemoteFavorites`에 저장되고 리모컨에 반영.
+- 유튜브 재생: 주소창에 넣으면 `yt-dlp`를 거쳐 재생(길이 표시 확인).
+- SponsorBlock: `scripts/`가 출력 폴더와 `mpvcfg\scripts`로 복사되고 `sponsorblock.conf`가 만들어짐. 서버 조회 스크립트는 `error` 없이 응답.
+
 **아직 확인하지 못함**
-- 2026-10-28에 새로 쓴 부분 중 위에 적지 않은 것: 북마크, 최근 재생 메뉴, 자막·소리 메뉴, 이어 보기, 끌어다 놓기, 속도 팝업, 화면·소리 조절(이퀄라이저), 리모컨 칸 편집, 웹뷰 캡처(로그인이 필요해 시험 못 함).
-- 유튜브 재생(`yt-dlp`는 받아 두었지만 재생은 시험하지 않음), SponsorBlock이 실제로 구간을 건너뛰는지(`scripts/` 없음).
+- 끌어다 놓기, 북마크 칩 우클릭 삭제 메뉴(안구 마우스가 커서를 옮겨 합성 마우스 시험이 안 됨), 이퀄라이저 소리, 웹뷰 캡처(로그인이 필요).
+- SponsorBlock이 실제로 구간을 건너뛰는지(건너뛸 구간이 등록된 영상으로 시험 필요).
 - 앰비언트(`Ctrl+Alt+G`)의 화면·소리, mpv 자막 크기(90, `sub-ass-override=scale`).
 - PIP 영상 위 드래그의 이동 계산(합성 마우스 입력이 이 환경에서 훅에 도착하지 않아 시험 불가).
 - 영상 비율 맞춤과 `WM_SIZING` 비율 유지 동작.
@@ -137,7 +146,8 @@ mpv 화면에서는 `Ctrl+↑/↓`(영상 창 포커스)로도 자막 크기를 
 ## 다음 작업 (예정)
 
 - 위 "아직 확인하지 못함" 항목을 실제 영상으로 하나씩 확인한다. 어색하거나 원본과 다른 동작은 고친다.
-- `scripts/`(SponsorBlock)를 upstream에서 다시 받아 넣고 구간 건너뛰기를 확인한다.
+- SponsorBlock 구간 건너뛰기를 구간이 등록된 영상으로 확인한다.
+- 이어 보기 안내 문구("1분 이상")와 실제 저장 조건(15초 초과)을 맞춘다. 일시정지한 채 새 파일을 열면 일시정지로 시작하는 동작도 정한다.
 - 임시 아이콘(`Assets/icons`)을 원하는 그림으로 교체한다.
 - 재생 목록 패널의 드래그로 순서 바꾸기(아직 없음). 토스트의 배경만 투명하게 하는 방식(지금은 창 전체가 투명해져 글자도 옅어짐).
 - 제약: mpv/WebView2는 자식 HWND라 그 위에 WPF 요소를 겹칠 수 없다(Airspace). 새 UI는 영상 영역 밖(바·옆 패널)에 두거나 `LockOverlay`·`ToastWindow`처럼 별도 최상위 창으로 띄운다.
@@ -165,7 +175,7 @@ Start-Process C:\ai\projects\HybridPipPlayer\bin\Debug\net8.0-windows\HybridPipP
 
 **복구하지 못한 것**
 - 원래의 git 기록(첫 커밋 `feat: WPF 하이브리드 PIP 플레이어`가 있었다).
-- `scripts/`(po5/mpv_sponsorblock 사본)와 `libmpv-2.dll`, `yt-dlp.exe` 같은 바이너리는 기록에 없어서 `libmpv`와 `yt-dlp`는 다시 받았고 SponsorBlock 스크립트는 아직 없다.
+- `scripts/`(po5/mpv_sponsorblock 사본)와 `libmpv-2.dll`, `yt-dlp.exe` 같은 바이너리는 기록에 없어서 다시 받았다(`scripts/`는 upstream 커밋 `7785c14`를 받아 둠).
 - 화면·소리 조절의 mpv 쪽 연결(`ApplyPlayerSettings`)과 메뉴 문구, 세부 동작은 원본과 다를 수 있다.
 
 이후 추가(복원 범위 밖): 재생 목록 슬라이딩 패널, 재생 줄의 캡처 버튼, 스크린샷 토스트(`ToastWindow`)와 그 설정(투명도·표시 시간).
