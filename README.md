@@ -148,7 +148,7 @@ mpv 화면에서는 `Ctrl+↑/↓`(영상 창 포커스)로도 자막 크기를 
 
 ```powershell
 $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS='--remote-debugging-port=9223 --remote-debugging-address=127.0.0.1'
-Start-Process C:\ai\projects\HybridPipPlayer\bin\Debug\net8.0-windows10.0.19041.0\HybridPipPlayer.exe
+Start-Process C:\ai\projects\HybridPipPlayer\bin\Debug\net8.0-windows\HybridPipPlayer.exe
 # 웹뷰는 OTT 버튼을 처음 누를 때 초기화되므로 그 뒤에 http://127.0.0.1:9223/json 으로 접속된다
 ```
 
