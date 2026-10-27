@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <!-- WinRT(미디어 키) 때문에 TFM 이 바뀌어도 실행 파일 위치는 기존 그대로(bin/구성/net8.0-windows) 유지 -->
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>bin\$(Configuration)\net8.0-windows\</OutputPath>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <PlatformTarget>x64</PlatformTarget>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <NoWarn>$(NoWarn);WFAC010</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2792.45" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="scripts\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- 재생 줄 아이콘(어두운 테마용 흰 선). 세 색 테마(A/B/C)가 모두 어두운 바탕이라 한 벌만 쓴다 -->
+  <ItemGroup>
+    <Resource Include="Assets\icons\*.png" />
+  </ItemGroup>
+
+  <!-- libmpv-2.dll, yt-dlp.exe 를 프로젝트 폴더에 두면 출력 폴더로 복사 -->
+  <ItemGroup>
+    <None Include="libmpv-2.dll" Condition="Exists('libmpv-2.dll')" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="yt-dlp.exe" Condition="Exists('yt-dlp.exe')" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <Target Name="WarnMissingBinaries" BeforeTargets="Build">
+    <Warning Text="libmpv-2.dll 이 프로젝트 폴더에 없습니다. 로컬/유튜브 재생이 동작하지 않습니다." Condition="!Exists('libmpv-2.dll')" />
+    <Warning Text="yt-dlp.exe 가 프로젝트 폴더에 없습니다. 유튜브 재생이 동작하지 않습니다." Condition="!Exists('yt-dlp.exe')" />
+  </Target>
+</Project>

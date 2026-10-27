@@ -1,0 +1,257 @@
+<Window x:Class="HybridPipPlayer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:wf="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        Title="Hybrid PIP Player" Width="960" Height="600"
+        WindowStyle="None" ResizeMode="CanResize" Background="{DynamicResource BarBrush}"
+        AllowDrop="True" DragOver="Window_DragOver" Drop="Window_Drop">
+
+    <Window.TaskbarItemInfo>
+        <TaskbarItemInfo x:Name="TaskbarInfo"/>
+    </Window.TaskbarItemInfo>
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0"/>
+    </WindowChrome.WindowChrome>
+
+    <!-- Margin 6: 자식 HWND(mpv/WebView2)가 가장자리까지 덮으면 WindowChrome 의 크기 조절 영역이 가려진다 -->
+    <Grid x:Name="RootGrid" Margin="6">
+        <Grid.RowDefinitions>
+            <RowDefinition x:Name="ControlBarRow" Height="66"/>
+            <RowDefinition x:Name="ControlTopRowDef" Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition x:Name="ControlBottomRowDef" Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 상단 드래그 핸들. PIP 에서는 내용만 숨기고 얇은 띠로 남겨 드래그(좌)·복귀(우클릭)에 쓴다
+             (mpv/WebView2 자식 창이 마우스를 가져가므로 영상 위에서는 창을 못 움직인다) -->
+        <Border x:Name="TopBar" Grid.Row="0" Background="{DynamicResource BarBrush}"
+                MouseLeftButtonDown="TopBar_MouseLeftButtonDown" MouseRightButtonUp="TopBar_MouseRightButtonUp"
+                ToolTip="좌 드래그: 이동 · 우클릭: PIP 전환">
+            <Grid x:Name="BarContent">
+                <Grid.RowDefinitions>
+                    <RowDefinition x:Name="UrlRowDef" Height="38"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- 1줄: 주소 · 상태 · 동작 버튼 -->
+                <Grid x:Name="UrlRowGrid" Grid.Row="0" Margin="8,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="UrlInputBox" Grid.Column="0" VerticalContentAlignment="Center" Margin="0,6,8,6"
+                             Text="https://www.youtube.com/watch?v=jfKfPfyJRdk" KeyDown="UrlInputBox_KeyDown"/>
+                    <TextBlock x:Name="StatusText" Grid.Column="1" VerticalAlignment="Center" Margin="0,0,8,0"
+                               Foreground="{DynamicResource WarnBrush}" MaxWidth="260" TextTrimming="CharacterEllipsis"/>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button x:Name="SettingsBtn" Style="{StaticResource IconButton}" Content="&#xE713;" Click="SettingsBtn_Click" Margin="2,0" ToolTip="설정 (Ctrl+,)"/>
+                        <Button x:Name="RecentBtn" Style="{StaticResource IconButton}" Content="&#xE81C;" Click="RecentBtn_Click" Margin="2,0" ToolTip="최근 재생"/>
+                        <Button Content="재생" Click="PlayBtn_Click" Margin="2,0"/>
+                        <Button Content="PIP(Ctrl+Alt+P)" Click="PipBtn_Click" Margin="2,0"/>
+                        <Button Content="✕" Click="CloseBtn_Click" Style="{StaticResource GhostButton}" Margin="4,0,0,0"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- 2줄: 북마크 (코드에서 채움) -->
+                <Border x:Name="BookmarkRowBorder" Grid.Row="1" Height="28" Background="{DynamicResource BarDeepBrush}">
+                    <StackPanel Orientation="Horizontal" Margin="8,0" VerticalAlignment="Center">
+                        <ItemsControl x:Name="BookmarkBar" VerticalAlignment="Center">
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource ChipButton}" Click="Bookmark_Click" Tag="{Binding}" ToolTip="{Binding Url}">
+                                    <Button.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="북마크 삭제" Click="BookmarkDelete_Click"/>
+                                        </ContextMenu>
+                                    </Button.ContextMenu>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="16" Height="16" CornerRadius="4" Margin="0,0,6,0" BorderBrush="#66000000" BorderThickness="1" Background="{Binding Brush}">
+                                            <TextBlock Text="{Binding Mark}" Foreground="White" FontSize="9" FontWeight="Bold"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                        <Button Style="{StaticResource ChipButton}" Click="MyFile_Click" ToolTip="내 컴퓨터의 파일 열기">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE8E5;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource SubTextBrush}" Margin="2,0,6,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="내 파일" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="AddBookmarkBtn" Style="{StaticResource ChipButton}" Click="AddBookmark_Click" ToolTip="주소창의 주소를 북마크로 추가 (칩 우클릭: 삭제)">
+                            <TextBlock Text="＋ 추가" Foreground="{DynamicResource SubTextBrush}" Margin="4,0,0,0" VerticalAlignment="Center"/>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+
+        <!-- 재생 컨트롤 줄 (엔진 A 전용). 기본은 영상 아래(Grid.Row=3), 설정에서 위(Grid.Row=1)로 옮길 수 있다 -->
+        <Border x:Name="ControlRow" Grid.Row="3" Height="40" Padding="8,0" Background="{DynamicResource BarBrush}"
+                BorderBrush="#14FFFFFF" BorderThickness="0,1,0,0"
+                MouseLeftButtonDown="TopBar_MouseLeftButtonDown">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/> <!-- 0 열기 -->
+                    <ColumnDefinition Width="Auto"/> <!-- 1 이전 -->
+                    <ColumnDefinition Width="Auto"/> <!-- 2 재생 -->
+                    <ColumnDefinition Width="Auto"/> <!-- 3 정지 -->
+                    <ColumnDefinition Width="Auto"/> <!-- 4 다음 -->
+                    <ColumnDefinition Width="Auto"/> <!-- 5 시간 -->
+                    <ColumnDefinition Width="*"/>    <!-- 6 탐색 막대 -->
+                    <ColumnDefinition Width="Auto"/> <!-- 7 속도 -->
+                    <ColumnDefinition Width="Auto"/> <!-- 8 목록 -->
+                    <ColumnDefinition Width="Auto"/> <!-- 9 자막 -->
+                    <ColumnDefinition Width="Auto"/> <!-- 10 소리 -->
+                    <ColumnDefinition Width="Auto"/> <!-- 11 더보기 -->
+                    <ColumnDefinition Width="Auto"/> <!-- 12 캡처 -->
+                    <ColumnDefinition Width="Auto"/> <!-- 13 창 최대화 -->
+                    <ColumnDefinition Width="Auto"/> <!-- 13 전체 화면 -->
+                    <ColumnDefinition Width="Auto"/> <!-- 14 음소거 -->
+                    <ColumnDefinition Width="64"/>   <!-- 15 볼륨 -->
+                    <ColumnDefinition Width="Auto"/> <!-- 16 리모컨 -->
+                    <ColumnDefinition Width="Auto"/> <!-- 17 사용자가 올린 기능 아이콘 -->
+                </Grid.ColumnDefinitions>
+                <Button x:Name="OpenBtn" Grid.Column="0" Style="{StaticResource PicButton}" Click="OpenBtn_Click" Margin="0,0,4,0" ToolTip="열기: 파일 · 폴더 · 주소 · 최근"><Image Source="Assets/icons/open.png" Width="20" Height="20" RenderOptions.BitmapScalingMode="HighQuality"/></Button>
+                <Button x:Name="PrevBtn" Grid.Column="1" Style="{StaticResource PicButton}" Click="PrevBtn_Click" ToolTip="이전 파일"><Image Source="Assets/icons/prev.png" Width="20" Height="20" RenderOptions.BitmapScalingMode="HighQuality"/></Button>
+                <Button x:Name="PlayPauseBtn" Grid.Column="2" Style="{StaticResource PicButton}" Click="PlayPauseBtn_Click" ToolTip="재생 / 일시정지">
+                    <Image x:Name="PlayImg" Source="Assets/icons/play.png" Width="20" Height="20" RenderOptions.BitmapScalingMode="HighQuality"/>
+                </Button>
+                <Button x:Name="StopBtn" Grid.Column="3" Style="{StaticResource PicButton}" Click="StopBtn_Click" ToolTip="정지 (처음 위치로)"><Image Source="Assets/icons/stop.png" Width="20" Height="20" RenderOptions.BitmapScalingMode="HighQuality"/></Button>
+                <Button x:Name="NextBtn" Grid.Column="4" Style="{StaticResource PicButton}" Click="NextBtn_Click" ToolTip="다음 파일"><Image Source="Assets/icons/next.png" Width="20" Height="20" RenderOptions.BitmapScalingMode="HighQuality"/></Button>
+                <TextBlock x:Name="TimeText" Grid.Column="5" Text="0:00 / 0:00" Foreground="{DynamicResource SubTextBrush}" FontSize="12"
+                           Margin="6,0" VerticalAlignment="Center" MinWidth="80" TextAlignment="Center"/>
+                <Slider x:Name="SeekSlider" Grid.Column="6" Style="{StaticResource PlayerSlider}" Minimum="0" Maximum="1" ValueChanged="SeekSlider_ValueChanged"
+                        PreviewMouseMove="SeekSlider_PreviewMouseMove" VerticalAlignment="Center"/>
+                <Button x:Name="SpeedBtn" Grid.Column="7" Style="{StaticResource PicButton}" Width="Auto" MinWidth="52" Padding="4,0" Click="SpeedBtn_Click" Margin="6,0,0,0" ToolTip="재생 속도">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="Assets/icons/speed.png" Width="20" Height="20" RenderOptions.BitmapScalingMode="HighQuality"/>
+                        <TextBlock x:Name="SpeedText" Text="1×" FontFamily="Segoe UI" FontSize="12" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                    </StackPanel>
+                </Button>
+                <Popup x:Name="SpeedPopup" PlacementTarget="{Binding ElementName=SpeedBtn}" Placement="Top" StaysOpen="False" AllowsTransparency="True">
+                    <Border Background="{DynamicResource FieldBrush}" BorderBrush="#33FFFFFF" BorderThickness="1" CornerRadius="10" Padding="8" Margin="0,0,0,6">
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="−0.5" Tag="-0.5" Click="SpeedStep_Click" Margin="2,0"/>
+                            <Button Content="−0.25" Tag="-0.25" Click="SpeedStep_Click" Margin="2,0"/>
+                            <Button x:Name="SpeedValueBtn" Content="1.00×" Click="SpeedReset_Click" Style="{StaticResource GhostButton}" MinWidth="64" FontWeight="Bold"
+                                    Foreground="{DynamicResource AccentBrush}" ToolTip="누르면 1.0× 로"/>
+                            <Button Content="+0.25" Tag="0.25" Click="SpeedStep_Click" Margin="2,0"/>
+                            <Button Content="+0.5" Tag="0.5" Click="SpeedStep_Click" Margin="2,0"/>
+                        </StackPanel>
+                    </Border>
+                </Popup>
+                <Button x:Name="ListBtn" Grid.Column="8" Style="{StaticResource PicButton}" Content="&#xE8FD;" Click="ListBtn_Click" Margin="0" ToolTip="재생 목록 · 반복 · 섞기"/>
+                <Button x:Name="SubBtn" Grid.Column="9" Style="{StaticResource PicButton}" Click="SubBtn_Click" Margin="0" ToolTip="자막 선택"><Image Source="Assets/icons/subtitle.png" Width="20" Height="20" RenderOptions.BitmapScalingMode="HighQuality"/></Button>
+                <Button x:Name="AudioBtn" Grid.Column="10" Style="{StaticResource PicButton}" Click="AudioBtn_Click" Margin="0" ToolTip="오디오 트랙 선택"><Image Source="Assets/icons/audio.png" Width="20" Height="20" RenderOptions.BitmapScalingMode="HighQuality"/></Button>
+                <Button x:Name="MoreBtn" Grid.Column="11" Style="{StaticResource PicButton}" Content="&#xE712;" Click="MoreBtn_Click" Margin="0" ToolTip="더보기: 스크린샷 · 프레임 이동 · 구간 반복"/>
+                <Button x:Name="CaptureBtn" Grid.Column="12" Style="{StaticResource PicButton}" Click="CaptureBtn_Click" Margin="0" ToolTip="화면 캡처 (스크린샷 폴더에 저장)"><Image Source="Assets/icons/camera.png" Width="20" Height="20" RenderOptions.BitmapScalingMode="HighQuality"/></Button>
+                <Button x:Name="MaxBtn" Grid.Column="13" Style="{StaticResource PicButton}" Click="MaxBtn_Click" Margin="0" ToolTip="창 최대화 / 복원"><Image Source="Assets/icons/maximize.png" Width="20" Height="20" RenderOptions.BitmapScalingMode="HighQuality"/></Button>
+                <Button x:Name="FullscreenBtn" Grid.Column="14" Style="{StaticResource PicButton}" Click="FullscreenBtn_Click" Margin="0" ToolTip="전체 화면 (Esc 로 해제)"><Image Source="Assets/icons/fullscreen.png" Width="20" Height="20" RenderOptions.BitmapScalingMode="HighQuality"/></Button>
+                <Button x:Name="MuteBtn" Grid.Column="15" Style="{StaticResource PicButton}" Click="MuteBtn_Click" Margin="6,0,2,0" ToolTip="음소거">
+                    <Image x:Name="MuteImg" Source="Assets/icons/volume.png" Width="20" Height="20" RenderOptions.BitmapScalingMode="HighQuality"/>
+                </Button>
+                <Slider x:Name="VolumeSlider" Grid.Column="16" Style="{StaticResource PlayerSlider}" Minimum="0" Maximum="100" Value="100" ValueChanged="VolumeSlider_ValueChanged" VerticalAlignment="Center"/>
+                <Button x:Name="RemoteBtn" Grid.Column="17" Style="{StaticResource PicButton}" Click="RemoteBtn_Click" Margin="8,0,0,0" ToolTip="리모컨: 자주 쓰는 기능 모음"><Image Source="Assets/icons/remote.png" Width="20" Height="20" RenderOptions.BitmapScalingMode="HighQuality"/></Button>
+                <StackPanel x:Name="ExtraPanel" Grid.Column="18" Orientation="Horizontal" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <!-- 영상 영역. 오른쪽 목록 패널은 영상 위에 겹치지 않고 열릴 때 영상 영역을 옆으로 밀어낸다
+             (영상 HWND 위에는 WPF 요소를 그릴 수 없다) -->
+        <Grid x:Name="VideoArea" Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 엔진 A: libmpv 뷰포트 (로컬 영상 & 유튜브 무광고) -->
+            <WindowsFormsHost x:Name="MpvHost" Grid.Column="0" Visibility="Visible">
+                <wf:Panel x:Name="MpvRenderPanel" BackColor="Black"/>
+            </WindowsFormsHost>
+
+            <!-- 엔진 B: WebView2 뷰포트 (넷플릭스 & 디즈니+ DRM). 보이는 상태에서만 HWND 가 만들어지므로
+                 처음 OTT 요청 때 Visible 로 바꾼 뒤 초기화한다 -->
+            <wv2:WebView2 x:Name="DrmWebView" Grid.Column="0" Visibility="Collapsed" DefaultBackgroundColor="Black"/>
+
+            <!-- 재생 목록 슬라이딩 패널: 바깥 Border 의 Width 를 0~300 으로 움직이고 안쪽은 300 으로 고정해 잘려 보이게 한다 -->
+            <Border x:Name="ListPanel" Grid.Column="1" Width="0" ClipToBounds="True"
+                    Background="{DynamicResource BarBrush}" BorderBrush="#14FFFFFF" BorderThickness="1,0,0,0">
+                <Grid Width="299">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="12,8,8,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="ListTitle" Text="재생 목록" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextBrush}"/>
+                        <Button x:Name="ListRepeatBtn" Grid.Column="1" Content="반복: 끔" Click="ListRepeat_Click" Margin="2,0"
+                                Style="{StaticResource GhostButton}" ToolTip="반복 모드 바꾸기 (끔 → 목록 전체 → 한 곡)"/>
+                        <Button Grid.Column="2" Content="섞기" Click="ListShuffle_Click" Margin="2,0" Style="{StaticResource GhostButton}"/>
+                        <Button Grid.Column="3" Content="&#xE711;" FontFamily="Segoe MDL2 Assets" Click="ListClose_Click" Margin="2,0"
+                                Style="{StaticResource GhostButton}" ToolTip="닫기"/>
+                    </Grid>
+
+                    <Grid Grid.Row="1">
+                        <ListBox x:Name="ListItems" Background="Transparent" BorderThickness="0" ItemContainerStyle="{StaticResource SidebarItem}"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseDoubleClick="ListItems_MouseDoubleClick"
+                                 KeyDown="ListItems_KeyDown">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="-6,-4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="26"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Number}" Foreground="{DynamicResource SubTextBrush}" FontSize="11" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Title}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip="{Binding Title}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Current}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                                            <Setter Property="FontWeight" Value="Bold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <Button Grid.Column="2" Content="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="10" Width="22" Height="22" Padding="0"
+                                                Tag="{Binding Index}" Click="ListRemove_Click" Style="{StaticResource GhostButton}" ToolTip="목록에서 빼기"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <TextBlock x:Name="ListEmptyText" Text="재생 목록이 비어 있습니다.&#x0A;파일이나 폴더를 추가하세요." TextAlignment="Center"
+                                   Foreground="{DynamicResource SubTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                    </Grid>
+
+                    <WrapPanel Grid.Row="2" Margin="10,6,10,10">
+                        <Button Content="파일 추가" Click="ListAddFiles_Click" Margin="2"/>
+                        <Button Content="폴더 추가" Click="ListAddFolder_Click" Margin="2"/>
+                        <Button Content="저장" Click="ListSave_Click" Margin="2"/>
+                        <Button Content="비우기" Click="ListClear_Click" Margin="2"/>
+                    </WrapPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>
