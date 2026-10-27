@@ -742,7 +742,24 @@ public partial class MainWindow : Window
         else if (e.LeftButton == MouseButtonState.Pressed) DragMove();
     }
 
-    private void TopBar_MouseRightButtonUp(object sender, MouseButtonEventArgs e) { if (!_pipLocked) TogglePipMode(); }
+    private void TopBar_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        // 북마크 칩의 우클릭은 삭제 메뉴용이라 PIP 전환으로 번지지 않게 한다
+        if (e.OriginalSource is DependencyObject src && FindAncestor<System.Windows.Controls.Primitives.ButtonBase>(src) != null) return;
+        if (!_pipLocked) TogglePipMode();
+    }
+
+    private static T? FindAncestor<T>(DependencyObject? d) where T : DependencyObject
+    {
+        while (d != null)
+        {
+            if (d is T t) return t;
+            d = d is System.Windows.Media.Visual or System.Windows.Media.Media3D.Visual3D
+                ? System.Windows.Media.VisualTreeHelper.GetParent(d)
+                : LogicalTreeHelper.GetParent(d);
+        }
+        return null;
+    }
 
     private void PlayBtn_Click(object sender, RoutedEventArgs e) => RouteMedia(UrlInputBox.Text);
     private void UrlInputBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e) { if (e.Key == Key.Enter) RouteMedia(UrlInputBox.Text); }
