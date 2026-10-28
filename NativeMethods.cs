@@ -68,10 +68,22 @@ public static class NativeMethods
     public const int HTCAPTION = 2;
     public const uint GA_ROOT = 2;
 
+    // 저수준 훅 공용 시그니처(마우스·키보드 모두 같다)
     public delegate IntPtr LowLevelMouseProc(int nCode, IntPtr wParam, IntPtr lParam);
 
     [StructLayout(LayoutKind.Sequential)]
     public struct MSLLHOOKSTRUCT { public POINT pt; public uint mouseData, flags, time; public IntPtr dwExtraInfo; }
+
+    // 저수준 키보드 훅 — OSK 영문 모드처럼 글자를 유니코드(VK_PACKET)로 보내는 입력은 mpv 키 바인딩·WPF Key 이벤트에 잡히지 않는다.
+    // VK_PACKET 이면 scanCode 에 UTF-16 문자가 들어 있다.
+    public const int WH_KEYBOARD_LL = 13;
+    public const uint VK_PACKET = 0xE7;
+    public const int WM_KEYDOWN = 0x0100;
+    public const int WM_KEYUP = 0x0101;
+    public const int WM_SYSKEYDOWN = 0x0104;
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct KBDLLHOOKSTRUCT { public uint vkCode, scanCode, flags, time; public IntPtr dwExtraInfo; }
 
     [DllImport("user32.dll", SetLastError = true)] public static extern IntPtr SetWindowsHookEx(int idHook, LowLevelMouseProc fn, IntPtr hMod, uint threadId);
     [DllImport("user32.dll")] public static extern bool UnhookWindowsHookEx(IntPtr hhk);

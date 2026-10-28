@@ -133,6 +133,8 @@ public partial class MainWindow : Window
             NativeMethods.GetModuleHandle(null), 0);
         if (_mouseHook == IntPtr.Zero) SetStatus($"마우스 훅 설치 실패(오류 {Marshal.GetLastWin32Error()}): PIP 영상 드래그 불가");
 
+        InstallTextKeyHook(); // MainWindow.Playback.cs
+
         _lockOverlay = new LockOverlay { Owner = this };
         _lockOverlay.Clicked += ToggleLock;
 
@@ -777,6 +779,7 @@ public partial class MainWindow : Window
         _tick.Stop();
         _hwndSource?.RemoveHook(WndProc);
         if (_mouseHook != IntPtr.Zero) { NativeMethods.UnhookWindowsHookEx(_mouseHook); _mouseHook = IntPtr.Zero; }
+        if (_keyHook != IntPtr.Zero) { NativeMethods.UnhookWindowsHookEx(_keyHook); _keyHook = IntPtr.Zero; }
         foreach (int id in new[] { NativeMethods.HOTKEY_ID_CLICKTHROUGH, NativeMethods.HOTKEY_ID_PIP,
                                    NativeMethods.HOTKEY_ID_WALLPAPER, NativeMethods.HOTKEY_ID_AMBIENT,
                                    NativeMethods.HOTKEY_ID_SUB_UP, NativeMethods.HOTKEY_ID_SUB_DOWN, NativeMethods.HOTKEY_ID_LOCK })
