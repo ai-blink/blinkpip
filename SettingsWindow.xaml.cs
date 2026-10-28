@@ -186,6 +186,15 @@ public partial class SettingsWindow : Window
         Changed(nameof(AppSettings.FullscreenHideSec));
     }
 
+    // 재생 줄 팝업에서 간격을 바꿨을 때 슬라이더를 맞춘다
+    public void SyncSeekSeconds()
+    {
+        _loading = true;
+        SeekSecSlider.Value = _s.SeekSeconds;
+        UpdateValueTexts();
+        _loading = false;
+    }
+
     private void SeekSec_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         if (_loading) return; // XAML 파싱 중 Minimum 보정으로 먼저 호출될 수 있다(아직 없는 요소를 건드리지 않게)

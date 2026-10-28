@@ -305,6 +305,7 @@ public partial class MainWindow
         if (string.IsNullOrEmpty(path)) return;
         _resumePath = path;
         RecentStore.Add(path);
+        if (!_autoPaused && _mpv.GetPaused()) _mpv.SetPause(false); // 새 파일은 일시정지가 이어지지 않고 재생으로 시작한다
         if (_listOpen) RefreshPlaylistRows(); // 다음 곡으로 넘어가면 현재 표시를 옮긴다
         if (_settings.ResumePlayback && ResumeStore.Get(path) is { } pos && pos > 5) _mpv.SeekTo(pos);
     }
@@ -365,6 +366,7 @@ public partial class MainWindow
         _settings.SeekSeconds = sec;
         OnSettingChanged(nameof(AppSettings.SeekSeconds)); // 범위 보정, 저장, 버튼 글자 갱신
         SeekValueBtn.Content = _settings.SeekSeconds + "초";
+        _settingsWindow?.SyncSeekSeconds();
     }
 
     // 탐색 버튼의 글자와 설명을 설정의 건너뛰기 간격에 맞춘다

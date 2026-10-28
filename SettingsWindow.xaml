@@ -126,7 +126,7 @@
                             <Grid Style="{StaticResource Row}">
                                 <StackPanel HorizontalAlignment="Left">
                                     <TextBlock Text="이어 보기" Style="{StaticResource RowName}"/>
-                                    <TextBlock Text="영상을 다시 열면 마지막으로 본 위치부터 재생합니다(1분 이상 영상)." Style="{StaticResource RowHint}" MaxWidth="320"/>
+                                    <TextBlock Text="영상을 다시 열면 마지막으로 본 위치부터 재생합니다(15초를 넘는 영상)." Style="{StaticResource RowHint}" MaxWidth="320"/>
                                 </StackPanel>
                                 <CheckBox x:Name="ResumeToggle" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" Checked="Resume_Changed" Unchecked="Resume_Changed"/>
                             </Grid>
