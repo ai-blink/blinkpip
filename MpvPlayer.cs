@@ -6,7 +6,7 @@ using System.Threading;
 
 namespace HybridPipPlayer;
 
-public class MpvPlayer : IDisposable
+public partial class MpvPlayer : IDisposable
 {
     private const string DllName = "libmpv-2.dll";
     private const int EVENT_SHUTDOWN = 1, EVENT_LOG_MESSAGE = 2, EVENT_START_FILE = 6, EVENT_PLAYBACK_RESTART = 21, EVENT_END_FILE = 7, EVENT_FILE_LOADED = 8, EVENT_CLIENT_MESSAGE = 16, EVENT_VIDEO_RECONFIG = 17;
@@ -63,20 +63,6 @@ public class MpvPlayer : IDisposable
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)] private static extern IntPtr mpv_error_string(int error);
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)] private static extern void mpv_terminate_destroy(IntPtr ctx);
 
-    // 영상 창 포커스일 때 받을 키 -> 호스트 동작 id (WPF 포커스일 때의 키는 MainWindow.Playback.cs 의 ShortcutKeyBridge)
-    private static readonly (string Key, string Id, bool Repeat)[] HostKeys =
-    {
-        ("SPACE", "hpp-play", false),
-        ("LEFT", "hpp-seekb", true), ("RIGHT", "hpp-seekf", true),
-        ("Shift+LEFT", "hpp-seekbl", true), ("Shift+RIGHT", "hpp-seekfl", true),
-        ("UP", "hpp-volup", true), ("DOWN", "hpp-voldn", true),
-        ("m", "hpp-mute", false),
-        ("PGUP", "hpp-prev", false), ("PGDWN", "hpp-next", false),
-        ("[", "hpp-slower", true), ("]", "hpp-faster", true), ("BS", "hpp-speed1", false),
-        (",", "hpp-fback", true), (".", "hpp-fstep", true),
-        ("s", "hpp-shot", false), ("l", "hpp-list", false),
-    };
-
     public MpvPlayer(IntPtr renderHwnd)
     {
         string dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HybridPipPlayer");
@@ -113,17 +99,7 @@ public class MpvPlayer : IDisposable
 
         // 더블클릭 전체화면은 임베드된 창에서 의미가 없고 PIP 드래그와 겹쳐 오작동하므로 끈다
         Command("keybind", "MBTN_LEFT_DBL", "ignore");
-        // 영상 창에서 Ctrl+↑/↓ 로 자막 크기를 바로 조절하고 화면에 현재 배율을 보여 준다
-        Command("keybind", "Ctrl+UP", "add sub-scale 0.1 ; show-text \"자막 크기 ${sub-scale}\"");
-        Command("keybind", "Ctrl+DOWN", "add sub-scale -0.1 ; show-text \"자막 크기 ${sub-scale}\"");
-        // 키보드 포커스가 영상 창(자식 HWND)에 있으면 WPF 키 이벤트가 오지 않으므로, mpv 키를 script-message 로 받아 호스트에 넘긴다
-        Command("keybind", "F11", "script-message hpp-fullscreen");
-        Command("keybind", "f", "script-message hpp-fullscreen");
-        Command("keybind", "ESC", "script-message hpp-escape");
-        Command("keybind", "Ctrl+,", "script-message hpp-settings");
-        // 재생 단축키는 건너뛰기 간격을 설정에서 바꿀 수 있어야 하므로 mpv 기본 동작 대신 호스트가 처리한다
-        foreach (var (key, id, repeat) in HostKeys)
-            Command("keybind", key, (repeat ? "repeatable " : "") + "script-message " + id);
+        InitializeDefaultShortcuts();
         mpv_request_log_messages(_ctx, ToUtf8("v"));
         _eventThread = new Thread(EventLoop) { IsBackground = true, Name = "mpv-events" };
         _eventThread.Start();

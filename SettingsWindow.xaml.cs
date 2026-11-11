@@ -67,28 +67,6 @@ public partial class SettingsWindow : Window
         UpdateDeviceLabel();
         BookmarkList.ItemsSource = _bookmarks;
 
-        // 단축키 표: 키 / 설명 두 열(글꼴이 가변 폭이라 공백 정렬이 안 맞는다)
-        foreach (var (key, desc) in new[]
-        {
-            ("Ctrl + ,", "설정 열기"), ("Ctrl+Alt+P", "PIP 켜기/끄기"), ("Ctrl+Alt+L", "PIP 잠금"),
-            ("Ctrl+Alt+C", "클릭 투과"), ("Ctrl+Alt+B", "배경화면 모드"), ("Ctrl+Alt+G", "앰비언트 글로우"),
-            ("Ctrl+Alt+↑ / ↓", "자막 크기"), ("F11 · f · Esc", "전체 화면 켜기/끄기"),
-            ("Space", "재생 / 일시정지"), ("← / →", "뒤로 / 앞으로 건너뛰기 (Shift: 6배)"),
-            ("↑ / ↓", "볼륨 ±5"), ("m", "음소거"), ("PageUp / PageDown", "이전 / 다음 파일"),
-            ("[ / ] / Backspace", "속도 -0.25 / +0.25 / 1×"), (", / .", "한 프레임 뒤 / 앞"),
-            ("s", "스크린샷"), ("l", "재생 목록 패널"), ("Ctrl+↑ / ↓ (영상 창)", "mpv 자막 크기"),
-        })
-        {
-            var row = new Grid { Margin = new Thickness(0, 0, 0, 5) };
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            var k = new TextBlock { Text = key, FontSize = 12, Foreground = (System.Windows.Media.Brush)FindResource("TextBrush") };
-            var d = new TextBlock { Text = desc, FontSize = 12, Foreground = (System.Windows.Media.Brush)FindResource("SubTextBrush") };
-            Grid.SetColumn(d, 1);
-            row.Children.Add(k);
-            row.Children.Add(d);
-            ShortcutList.Children.Add(row);
-        }
         var v = typeof(SettingsWindow).Assembly.GetName().Version;
         InfoText.Text = $"버전 {v?.ToString(3) ?? "?"} · 설정 파일: %LOCALAPPDATA%\\HybridPipPlayer\\settings.json";
         InitDiagnostics(diagnostics);

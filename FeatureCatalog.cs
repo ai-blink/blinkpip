@@ -38,7 +38,7 @@ public static class FeatureCatalog
         new("fstep",   "한 프레임 앞",    "", null,   "view", true),
         new("fback",   "한 프레임 뒤",    "", null,   "view", true),
         new("abloop",  "구간 반복",       "", null,   "view", true),
-        new("settings","설정",            "", null,   "app",  false, "Ctrl+,"),
+        new("settings","설정",            "", null,   "app",  false),
     };
 
     private static readonly Dictionary<string, Feature> Map = All.ToDictionary(f => f.Id);

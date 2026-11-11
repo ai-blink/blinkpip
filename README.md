@@ -16,7 +16,8 @@ WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 
 | 파일 | 역할 |
 | --- | --- |
 | `MainWindow.xaml(.cs)` | 창, 라우팅, PIP, 클릭 투과, 배경화면, 스냅, 비율 유지, 자막 크기, OTT 키 브릿지 |
-| `MainWindow.Playback.cs` | 재생 줄(재생·탐색·건너뛰기 간격·속도·볼륨), 재생 단축키(`ShortcutKeyBridge`, `RunKeyAction`), 열기, 재생 목록 패널, 자막·소리 메뉴, 스크린샷과 토스트, 전체 화면, 이어 보기, 설정 연결 |
+| `MainWindow.Playback.cs` | 재생 줄(재생·탐색·건너뛰기 간격·속도·볼륨), 열기, 재생 목록 패널, 자막·소리 메뉴, 스크린샷과 토스트, 전체 화면, 이어 보기, 설정 연결 |
+| `ShortcutCatalog.cs`, `ShortcutStore.cs`, `MainWindow.Shortcuts.cs`, `MpvPlayer.Shortcuts.cs`, `SettingsWindow.Shortcuts.cs` | 단일 기본 키 표, 변경분 저장·충돌 검사, WPF/IME/OSK/mpv 연결, 검색·키 입력·복원 편집기 |
 | `MainWindow.Remote.cs` | 리모컨(4×3 창)과 기능 id를 기존 핸들러에 잇는 부분, 재생 줄에 올린 기능 아이콘 |
 | `ToastWindow.xaml(.cs)` | 영상 위에 잠깐 뜨는 알림 창(포커스를 가져가지 않음). 스크린샷 저장 알림에 쓴다 |
 | `SettingsWindow.xaml(.cs)` | 설정 창(재생, 모양, PIP, 오디오·자막, 화면·소리 조절, 북마크·정보) |
@@ -70,7 +71,9 @@ dotnet run --project C:\ai\projects\HybridPipPlayer
 | `Ctrl+Alt+↑/↓` | 자막 크게/작게 (mpv: ±0.1, 웹뷰: ±0.2, 범위 0.8~4.0) |
 | `Ctrl+Alt+L` | PIP 잠금 토글(PIP에서만 동작, 자물쇠 버튼과 같음) |
 
-**재생 키**(창에 포커스가 있을 때. 영상 창 포커스는 `MpvPlayer.HostKeys`, 그 밖의 WPF 포커스는 `ShortcutKeyBridge`가 같은 동작 id로 처리. 주소창·목록·콤보에 포커스가 있으면 가로채지 않음)
+**기본 재생 키**(창에 포커스가 있을 때. `ShortcutCatalog`의 같은 표를 영상 창의 mpv 바인딩과 WPF의 `ShortcutKeyBridge`가 참조한다. 주소창·목록·콤보에 포커스가 있으면 가로채지 않음)
+
+설정 → 북마크·정보 → 단축키에서 기능을 검색하고 키를 바꿀 수 있다. 편집 칸에 `Ctrl+K`처럼 입력하거나, 칸을 선택한 뒤 **키 입력** 버튼을 눌러 실제 키를 누른다. **저장**으로 적용하며 키 입력 중 Esc는 취소다. 별칭은 `F11 | F`처럼 `|`로 구분하고 빈 칸은 해당 기능 해제다. 겹치는 키와 예약된 전역 키는 거절한다. 행별 **복원** 또는 **단축키 모두 기본값으로**를 지원한다. `%LOCALAPPDATA%\HybridPipPlayer\shortcuts.json`에는 기본값과 다른 기능만 저장한다. 전역 단축키 7개와 OTT 사이트 키는 편집 범위 밖이다. 설정 열기·자막 크기 두 기능은 기존처럼 영상 창 포커스에서만 동작한다.
 
 | 키 | 동작 |
 | --- | --- |
@@ -84,7 +87,7 @@ dotnet run --project C:\ai\projects\HybridPipPlayer
 | `s` / `l` | 스크린샷 / 재생 목록 패널 |
 | `f` · `F11` / `Esc` | 전체 화면 / 해제 |
 
-**글자 단축키(`m` `s` `l` `f` `[` `]` `,` `.`)는 저수준 키보드 훅(`TextKeyHookProc`)이 받는다.** 화상 키보드(OSK) 영문 모드는 글자를 유니코드(`VK_PACKET`)로 보내서 mpv 키 바인딩과 WPF `Key` 이벤트에 잡히지 않고, 한글 입력 상태의 키는 창에 `VK_PROCESSKEY`로 전달되기 때문이다. 훅은 이 창이 맨 앞이고 주소창·목록·콤보·메뉴에 포커스가 없고 Ctrl/Alt/Win이 눌리지 않았을 때만 처리하며, 처리한 키(KeyUp 포함)는 삼킨다. 영문 물리 키, 영문 유니코드, 한글 상태의 물리 키, 한글 자모 유니코드(`ㅡ` `ㄴ` `ㅣ` `ㄹ`)를 같은 동작으로 본다. `Space`·방향키·`PageUp/Down`·`Backspace`·`Esc`는 일반 키 입력이라 mpv 바인딩과 `ShortcutKeyBridge`가 처리한다.
+**글자 단축키는 저수준 키보드 훅(`TextKeyHookProc`)도 받는다.** 화상 키보드(OSK) 영문 모드는 글자를 유니코드(`VK_PACKET`)로 보내고, 한글 입력 상태의 물리 키는 창에 `VK_PROCESSKEY`로 전달되기 때문이다. 훅은 이 창이 맨 앞이고 주소창·목록·콤보·메뉴에 포커스가 없을 때 현재 키 표의 일치하는 조합만 처리하며, 처리한 KeyUp도 소비한다. 기본 키의 대소문자·Shift 허용과 한글 자모 위치 별칭(`ㅡ`→M, `ㄴ`→S, `ㅣ`→L, `ㄹ`→F)을 보존한다. 사용자 지정 키는 수정키를 정확히 구분한다. 키를 옮기면 문자·한글 위치 별칭도 새 배정을 따르며, 기존 기본 키가 mpv 내장 기능으로 되살아나지 않게 한다. `Space`·방향키·`PageUp/Down`·`Backspace`·`Esc`는 mpv 바인딩과 `ShortcutKeyBridge`가 처리한다.
 
 재생 줄에는 뒤로·시간·앞으로·간격 변경을 한 묶음으로 둔다: `[ ‹ N | 0:32 / 1:00 | N › | ▾ ]`. 화살표 방향이 이동 방향이고, N은 건너뛰기 간격(초)이다. 간격은 `▾` 버튼(또는 방향 버튼 우클릭)의 팝업에서 `-5 -1 [N초] +1 +5`로 바로 바꾸거나(가운데 `N초`는 5초로 되돌림), 설정(재생 > 건너뛰기 간격)에서 바꾼다. 범위는 1~60초이고 `settings.json`의 `SeekSeconds`에 저장된다.
 

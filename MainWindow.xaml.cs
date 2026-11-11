@@ -144,14 +144,7 @@ public partial class MainWindow : Window
         {
             _mpv = new MpvPlayer(MpvRenderPanel.Handle);
             AttachDiagnostics(_mpv);
-            _mpv.KeyAction += a => Dispatcher.BeginInvoke(() =>
-            {
-                if (_closing) return;
-                if (a == "hpp-fullscreen") ToggleFullscreen();
-                else if (a == "hpp-escape") { if (_isFullscreen) ExitFullscreen(); }
-                else if (a == "hpp-settings") OpenSettings();
-                else RunKeyAction(a);
-            });
+            _mpv.KeyAction += a => Dispatcher.BeginInvoke(() => DispatchShortcut(a));
             _mpv.VideoAspectChanged += a => Dispatcher.BeginInvoke(() =>
             {
                 if (_closing) return;
@@ -168,6 +161,7 @@ public partial class MainWindow : Window
                 MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
+        InitializeShortcuts();
         InitPlayback(); // 설정·북마크·재생 줄 (MainWindow.Playback.cs)
 
         // 다른 실행(연결 프로그램·더블클릭)이 넘기는 파일을 받고, 실행 인자로 받은 파일이 있으면 연다
