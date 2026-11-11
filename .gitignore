@@ -7,5 +7,6 @@ obj/
 libmpv-2.dll
 yt-dlp.exe
 
-# 서브에이전트 실행 기록, HTML 시안 같은 자동 생성 메모(소스 아님)
-notes/
+# 서브에이전트 실행 기록, HTML 시안 같은 자동 생성 메모(소스 아님). 단 notes/research/ 의 조사·계획 문서는 추적한다
+notes/*
+!notes/research/
