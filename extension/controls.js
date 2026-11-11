@@ -84,7 +84,7 @@ chrome.storage.local.get(HPP_DEFAULTS, v => {
     }, 150);
   };
   const applySubs = () => {
-    const overlay = settings.subPos === 'overlay';
+    const overlay = settings.subPos === 'overlay' && !st.native; // 원본 PiP(native)는 영상에 못 그리니 칸을 항상 보여 준다
     subs.style.display = overlay ? 'none' : 'flex';
     subs.style.height = Math.ceil(settings.lines * settings.fontSize * 1.35 + 12) + 'px';
     subText.style.fontFamily = settings.fontFamily;

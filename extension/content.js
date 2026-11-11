@@ -65,7 +65,8 @@ function readDomLines() {
     }
     return lines;
   }
-  document.querySelectorAll('.player-timedtext-text-container, .vjs-text-track-display div, .jw-text-track-cue').forEach(e => {
+  // Netflix, video.js, JW Player, ArtPlayer(.art-subtitle: nooo38 등 한국 스트리밍 사이트 다수가 사용)
+  document.querySelectorAll('.player-timedtext-text-container, .vjs-text-track-display div, .jw-text-track-cue, .art-subtitle').forEach(e => {
     (e.innerText || '').split('\n').forEach(t => { t = norm(t); if (t && !lines.includes(t)) lines.push(t); });
   });
   if (!lines.length) { // Disney+
@@ -112,6 +113,8 @@ function makeLocalPlayer(video) {
 }
 
 // ---------- PiP+ (Document PiP) ----------
+// Document PiP는 최상위 페이지에서만 열 수 있다. 영상이 iframe(내장 플레이어) 안에 있으면 PiP+는 불가하고 무테만 된다.
+const IN_IFRAME = window !== window.top;
 let pipWin = null;
 let opening = false; // 열기 중 중복 호출을 막는다(더블클릭)
 
@@ -126,6 +129,7 @@ function toast(msg) {
 
 async function openPip(video) {
   if (!('documentPictureInPicture' in window)) { alert('이 브라우저는 Document PiP를 지원하지 않습니다(Chrome/Edge 116+).'); return; }
+  if (IN_IFRAME) { toast('이 플레이어는 iframe 안에 있어 PiP+를 쓸 수 없습니다(크롬 제한). 무테를 사용하세요.'); return; }
   if (pipWin) { pipWin.close(); return; }
   if (opening) return;
   if (!video?.isConnected || !video.parentNode) return;
@@ -274,6 +278,7 @@ function buildPip(win, video, cleanups) {
 // 재생 줄·설정은 background가 따로 여는 컨트롤 창(controls.html)이 맡는다. 크롬은 PiP 창을 하나만 허용해서
 // Document PiP로는 컨트롤 창을 못 연다(열면 무테가 닫힌다).
 let frameless = null;
+const nativeOnly = new WeakSet(); // 합성(캔버스)이 막힌 영상: 다음부터 바로 원본 PiP로 연다
 
 function wrapText(ctx, text, maxW) {
   const out = [];
@@ -289,12 +294,12 @@ function wrapText(ctx, text, maxW) {
 }
 
 // 컨트롤 창의 명령을 받아 영상을 조작하고, 영상 상태를 컨트롤 창에 밀어 준다. 돌려주는 함수가 연결을 끊는다.
-function startControlBridge(video, getSubs) {
+function startControlBridge(video, getSubs, native = false) {
   const lp = makeLocalPlayer(video);
   const snap = () => {
     const s = lp.state();
     // Infinity는 JSON으로 못 보낸다. 자막 줄은 '영상 아래' 설정일 때 컨트롤 창이 그린다.
-    return { ...s, duration: isFinite(s.duration) ? s.duration : null, title: document.title, subs: getSubs() };
+    return { ...s, duration: isFinite(s.duration) ? s.duration : null, title: document.title, subs: getSubs(), native };
   };
   let timer = 0;
   const send = () => bg({ type: 'state', state: snap() });
@@ -326,6 +331,7 @@ async function openFrameless(video) {
   if (frameless) { await document.exitPictureInPicture().catch(() => {}); return; }
   if (!video?.isConnected) return;
   if (pipWin) { toast('PiP+ 창을 먼저 닫아 주세요.'); return; }
+  if (nativeOnly.has(video)) return openNative(video);
 
   let W = 1280, H = 720;
   const canvas = document.createElement('canvas');
@@ -368,7 +374,14 @@ async function openFrameless(video) {
     if (!tainted && frames++ % 30 === 0) {
       try { ctx.getImageData(0, 0, 1, 1); }
       catch (e) { if (e.name === 'SecurityError') tainted = true; }
-      if (tainted) { toast('이 영상은 다른 출처라 무테를 쓸 수 없습니다. PiP+를 사용하세요.'); document.exitPictureInPicture().catch(() => {}); return; }
+      if (tainted) {
+        nativeOnly.add(video);
+        if (drawTimer) { // PiP가 이미 열린 뒤에 알게 된 경우(영상이 늦게 로드됨): 닫고 다시 누르게 한다
+          toast('이 영상은 다른 출처라 합성할 수 없습니다. 무테를 한 번 더 누르면 원본 PiP로 엽니다.');
+          document.exitPictureInPicture().catch(() => {});
+        }
+        return;
+      }
     }
     // 자막 위치가 '영상 위'일 때만 영상에 그린다. '영상 아래'는 컨트롤 창의 자막 칸이 보여 준다.
     if (!subLines.length || settings.subPos !== 'overlay') return;
@@ -420,7 +433,7 @@ async function openFrameless(video) {
   out.addEventListener('leavepictureinpicture', leave, { once: true });
 
   draw();
-  if (tainted) { leave(); return; } // 열기 전에 이미 오염이면 PiP를 열지 않는다
+  if (tainted) { leave(); return openNative(video); } // 열기 전에 이미 오염이면 원본 PiP로(같은 클릭 안이라 허가가 남아 있다)
   drawTimer = setInterval(draw, 33);
   subTimer = setInterval(readSub, 100);
   try {
@@ -443,6 +456,56 @@ async function openFrameless(video) {
     console.warn('[Hybrid PiP] 무테 PiP 실패:', err);
     leave();
     alert('무테 PiP를 열지 못했습니다: ' + (err?.message || err));
+  }
+}
+
+// ---------- 원본 PiP 모드(합성 없이 실제 영상 요소를 기본 PiP로) ----------
+// 다른 출처 영상은 캔버스가 오염되어 합성(무테)을 못 쓴다. 이 모드는 video.requestPictureInPicture()를 그대로 부르므로
+// 출처·DRM과 상관없이 된다(사이트 내장 PIP 버튼과 같은 방식). 영상 위에 자막을 그릴 수는 없어서
+// 자막은 컨트롤 창의 자막 칸이 항상 보여 준다. 합성이 막히면 무테가 자동으로 이 모드로 넘어온다.
+async function openNative(video) {
+  if (frameless) { await document.exitPictureInPicture().catch(() => {}); return; }
+  if (!video?.isConnected) return;
+  if (pipWin) { toast('PiP+ 창을 먼저 닫아 주세요.'); return; }
+
+  const feed = makeSubFeed();
+  const onSeeking = () => feed.reset();
+  video.addEventListener('seeking', onSeeking);
+  let subLines = [], subKey = '', bridge = null, subTimer = 0;
+  const readSub = () => {
+    subLines = currentLines(video, feed);
+    const k = subLines.join('\n');
+    if (k !== subKey) { subKey = k; bridge?.push(true); }
+  };
+  frameless = { native: true };
+  // 크롬은 켜진 <track> 자막을 PiP 영상에 직접 그린다. 컨트롤 창 자막 칸과 겹치지 않게 숨긴다(hidden이어도 activeCues는 읽힌다).
+  const hiddenTracks = new Map();
+  const hideTracks = () => {
+    for (const tr of video.textTracks) {
+      if ((tr.kind === 'subtitles' || tr.kind === 'captions') && tr.mode === 'showing') { hiddenTracks.set(tr, tr.mode); tr.mode = 'hidden'; }
+    }
+  };
+  hideTracks();
+  const leave = () => {
+    clearInterval(subTimer);
+    hiddenTracks.forEach((mode, tr) => { if (tr.mode === 'hidden') tr.mode = mode; });
+    video.removeEventListener('seeking', onSeeking);
+    bridge?.stop(); bridge = null;
+    frameless = null;
+    bg({ type: 'controlsBye' }); // 컨트롤 창도 닫는다
+  };
+  video.addEventListener('leavepictureinpicture', leave, { once: true });
+  try {
+    await video.requestPictureInPicture();
+    if (!frameless) return; // 여는 동안 이미 닫혔다
+    subTimer = setInterval(() => { hideTracks(); readSub(); }, 100); // 열린 뒤 켜진 자막도 숨긴다
+    bridge = startControlBridge(video, () => subLines, true);
+    bg({ type: 'openControls' });
+  } catch (err) {
+    console.warn('[Hybrid PiP] 원본 PiP 실패:', err);
+    video.removeEventListener('leavepictureinpicture', leave);
+    leave();
+    alert('PiP를 열지 못했습니다: ' + (err?.message || err));
   }
 }
 
@@ -474,10 +537,11 @@ document.addEventListener('mousemove', e => {
   if (v) {
     target = v;
     const r = v.getBoundingClientRect();
-    btn2.style.left = Math.max(0, r.right - 62 - 52) + 'px';
+    btn2.style.left = Math.max(0, r.right - (IN_IFRAME ? 62 : 62 + 52)) + 'px'; // iframe에서는 PiP+ 자리까지 무테가 쓴다
     btn.style.left = Math.max(0, r.right - 62) + 'px';
     btn.style.top = btn2.style.top = Math.max(0, r.top + 8) + 'px';
-    btn.style.display = btn2.style.display = 'block';
+    btn2.style.display = 'block';
+    btn.style.display = IN_IFRAME ? 'none' : 'block'; // iframe 안에서는 PiP+ 버튼을 숨긴다
     clearTimeout(hideTimer);
     hideTimer = setTimeout(hideBtns, 2500);
   } else if (!onBtn) hideBtns();
@@ -490,5 +554,6 @@ const pickVideo = () => (target?.isConnected && target) || [...document.querySel
 document.addEventListener('keydown', e => {
   if (!e.altKey || !e.shiftKey) return;
   if (e.code === 'KeyP') { const v = pickVideo(); if (v) openPip(v); }
-  else if (e.code === 'KeyO') { const v = pickVideo(); if (v) openFrameless(v); } // 무테(기본 PiP)
+  else if (e.code === 'KeyO') { const v = pickVideo(); if (v) openFrameless(v); } // 무테(합성 PiP)
+  else if (e.code === 'KeyN') { const v = pickVideo(); if (v) openNative(v); } // 원본 PiP(합성 없음, DRM·다른 출처 영상용)
 }, true);
