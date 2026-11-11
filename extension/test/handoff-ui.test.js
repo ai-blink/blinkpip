@@ -18,6 +18,7 @@ class Element {
   get href() { return this.getAttribute('href') || ''; }
   attachShadow() { this.shadow = new Element(this.doc, 'shadow-root'); this.shadow.parentNode = this; this.shadow.host = this; return this.shadow; }
   addEventListener(type, fn) { if (!this.events.has(type)) this.events.set(type, []); this.events.get(type).push(fn); }
+  removeEventListener(type, fn) { this.events.set(type, (this.events.get(type) || []).filter(listener => listener !== fn)); }
   focus() { this.doc.activeElement = this; for (let p = this.parentNode; p; p = p.parentNode) if (p.host) { p.activeElement = this; this.doc.activeElement = p.host; } }
   querySelectorAll() { const out = []; const walk = node => { for (const c of node.children) { if ((c.tagName === 'INPUT' && !c.disabled) || (c.tagName === 'A' && c.href) || c.tagName === 'BUTTON') out.push(c); walk(c); } }; walk(this); return out; }
   fire(type, extra = {}) {
@@ -30,6 +31,7 @@ class Element {
 function fixture(pageUrl = 'https://example.test/watch', currentSrc = 'https://example.test/video.mp4') {
   const doc = { nodes: [], createElement(tag) { return new Element(this, tag); }, createTextNode(text) { const n = new Element(this, 'text'); n.textContent = text; return n; }, activeElement: null };
   doc.documentElement = new Element(doc, 'html'); doc.documentElement.connect(true);
+  doc.defaultView = new Element(doc, 'window'); doc.defaultView.closed = false;
   const track = { mode: 'showing', kind: 'subtitles' };
   const video = { isConnected: true, currentSrc, currentTime: 12, playbackRate: 1.25, textTracks: [track], querySelectorAll: () => [{ track, src: 'https://example.test/ko.vtt' }], pause() { throw new Error('source must not be paused'); } };
   const context = { HPP_HANDOFF: h, document: doc };
@@ -60,6 +62,16 @@ test('SPA page changes with same blob require refreshed preview', () => {
   const query = new URL(f.launch.href).searchParams;
   assert.equal(query.get('url'), page); assert.equal(query.get('t'), '23');
 });
+test('middle click blocks stale SPA link navigation', () => {
+  let page = 'https://example.test/watch/old';
+  const f = fixture(() => page, 'blob:https://example.test/unchanged');
+  page = 'https://example.test/watch/new'; f.video.currentTime = 75;
+  const event = f.launch.fire('auxclick', { button: 1 });
+  assert.equal(event.defaultPrevented, true); assert.equal(event.stopped, true);
+  assert.equal(f.launch.fire('click').defaultPrevented, true);
+  assert.equal(f.launch.fire('click').defaultPrevented, false);
+  assert.equal(new URL(f.launch.href).searchParams.get('url'), page);
+});
 test('checked metadata reaches encoded request', () => { const f = fixture(); for (const key of ['subtitle', 'speed', 'pip']) { f.option(key).checked = true; f.option(key).fire('change'); } const q = new URL(f.launch.href).searchParams; assert.equal(q.get('sub'), 'https://example.test/ko.vtt'); assert.equal(q.get('speed'), '1.25'); assert.equal(q.get('pip'), '1'); });
 test('disconnected video cannot launch', () => { const f = fixture(); f.video.isConnected = false; assert.equal(f.launch.fire('click').defaultPrevented, true); assert.equal(f.launch.href, ''); });
 test('Space stays in dialog without preventing checkbox default', () => {
@@ -67,6 +79,25 @@ test('Space stays in dialog without preventing checkbox default', () => {
   f.doc.documentElement.addEventListener('keydown', () => siteKeys++);
   const event = f.option('time').fire('keydown', { key: ' ' });
   assert.equal(siteKeys, 0); assert.equal(event.stopped, true); assert.equal(event.defaultPrevented, false);
+});
+test('Space release stays in dialog without preventing checkbox default', () => {
+  const f = fixture(); let siteReleases = 0;
+  f.doc.documentElement.addEventListener('keyup', () => siteReleases++);
+  const event = f.option('time').fire('keyup', { key: ' ' });
+  assert.equal(siteReleases, 0); assert.equal(event.stopped, true); assert.equal(event.defaultPrevented, false);
+});
+test('PiP document pagehide removes dialog and clears shared active state', () => {
+  const f = fixture(); f.doc.defaultView.closed = true;
+  f.doc.defaultView.fire('pagehide');
+  assert.equal(f.api.isOpen, false); assert.equal(f.panel.isConnected, false);
+  assert.equal(f.doc.defaultView.events.get('pagehide').length, 0);
+});
+test('replacing a dialog removes its old pagehide listener', () => {
+  const f = fixture(); const oldPanel = f.panel;
+  f.api.open(f.video, 'https://example.test/watch', f.doc);
+  assert.equal(oldPanel.isConnected, false); assert.equal(f.api.isOpen, true);
+  assert.equal(f.doc.defaultView.events.get('pagehide').length, 1);
+  f.doc.defaultView.fire('pagehide'); assert.equal(f.api.isOpen, false);
 });
 test('Escape closes owned dialog', () => { const f = fixture(); f.panel.fire('keydown', { key: 'Escape' }); assert.equal(f.api.isOpen, false); });
 console.log(`PASS ${passed} handoff dialog behavior checks (DOM double, not browser verification)`);

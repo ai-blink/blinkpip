@@ -2,8 +2,9 @@
 'use strict';
 const HPP_HANDOFF_UI = (() => {
   let active = null;
+  let dismissActive = null;
   function open(video, pageUrl, doc = document) {
-    active?.remove();
+    dismissActive?.();
     const host = doc.createElement('div');
     host.style.cssText = 'position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;background:#0009';
     const root = host.attachShadow({ mode: 'closed' });
@@ -26,8 +27,16 @@ const HPP_HANDOFF_UI = (() => {
     root.append(panel); doc.documentElement.append(host); active = host;
     panel.addEventListener('click', e => e.stopPropagation()); // closed shadow retargets inner clicks to host
     const focusBefore = doc.activeElement;
-    const dismiss = () => { host.remove(); if (active === host) active = null; if (focusBefore?.isConnected) focusBefore.focus?.(); };
-    close.addEventListener('click', dismiss);
+    const dismiss = (restoreFocus = true) => {
+      doc.defaultView?.removeEventListener('pagehide', onPageHide);
+      host.remove();
+      if (active === host) { active = null; dismissActive = null; }
+      if (restoreFocus && !doc.defaultView?.closed && focusBefore?.isConnected) focusBefore.focus?.();
+    };
+    const onPageHide = () => dismiss(false);
+    dismissActive = () => dismiss();
+    doc.defaultView?.addEventListener('pagehide', onPageHide, { once: true });
+    close.addEventListener('click', () => dismiss());
     host.addEventListener('click', e => { if (e.target === host) dismiss(); });
     const chosen = () => Object.fromEntries(Object.entries(options).map(([key, input]) => [key, input.checked]));
     const snapshot = () => HPP_HANDOFF.videoSnapshot(video, typeof pageUrl === 'function' ? pageUrl() : pageUrl);
@@ -62,6 +71,8 @@ const HPP_HANDOFF_UI = (() => {
       // Do not claim the browser confirmed the app opened; there is no protocol success ACK.
       status.textContent = '앱 열기를 요청했습니다. 응답이 없으면 앱의 확장 연결 등록을 확인해 주세요.';
     });
+    // Middle-click navigation bypasses the click-time snapshot/preview check.
+    launch.addEventListener('auxclick', e => { if (e.button === 1) { e.preventDefault(); e.stopPropagation(); } });
     panel.addEventListener('keydown', e => {
       e.stopPropagation(); // Keep dialog input out of the site's bubbling playback shortcuts.
       if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); dismiss(); }
@@ -72,6 +83,7 @@ const HPP_HANDOFF_UI = (() => {
         else if (!e.shiftKey && at === focusable.length - 1) { e.preventDefault(); focusable[0]?.focus(); }
       }
     });
+    panel.addEventListener('keyup', e => e.stopPropagation());
     refresh(); options.time.disabled ? close.focus() : options.time.focus();
   }
   return { open, get isOpen() { return !!active?.isConnected; } };

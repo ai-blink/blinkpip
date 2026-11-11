@@ -196,7 +196,8 @@ public sealed class DiagInfo : IDisposable
         // Never echo header/cookie dumps, including unrecognised cookie names and spaced bearer values.
         if (Regex.IsMatch(value, @"(?i)\b(cookie|authorization|password|passwd|secret|token|access[_-]?token|refresh[_-]?token|signature|sig|session|username|login|api[_-]?key)\b"))
             return "[인증 관련 내용 가림]";
-        string clean = Regex.Replace(value, @"(?i)\b(?:https?|ftp)://[^\s<>""']+", m =>
+        // Apostrophes are legal URL path characters; stopping there would expose the remaining path.
+        string clean = Regex.Replace(value, @"(?i)\b(?:https?|ftp)://[^\s<>""]+", m =>
             Uri.TryCreate(m.Value, UriKind.Absolute, out var u) ? $"{u.Scheme}://{u.Host}/[주소 가림]" : "[주소 가림]");
         clean = Regex.Replace(clean, @"(?i)(?:file:///|(?<![A-Za-z0-9])[a-z]:[\\/]|\\\\)[^\r\n""<>|]*", "[로컬 경로 가림]");
         clean = Regex.Replace(clean, @"[?#][^\s]*", "[주소 값 가림]");

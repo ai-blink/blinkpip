@@ -9,10 +9,11 @@ public partial class MainWindow
     private int _diagnosticRouteRevision;
     private ulong _diagnosticNavigation;
 
-    private void ShowMpv()
+    private void ShowMpv(bool appendToExisting = false)
     {
+        // Appending keeps the loading entry and its handoff options; leaving WebView must still cancel its pending navigation.
+        if (!appendToExisting || !_engineA) ++_diagnosticRouteRevision;
         if (!_engineA) ResumePracticeForExistingMedia();
-        ++_diagnosticRouteRevision; // invalidate a pending asynchronous OTT initialization
         DrmWebView.Visibility = Visibility.Collapsed;
         MpvHost.Visibility = Visibility.Visible;
     }

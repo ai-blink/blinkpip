@@ -142,7 +142,7 @@ public partial class MainWindow
             catch (Exception ex) { SetStatus("목록을 읽지 못했습니다: " + ex.Message); return; }
             if (files.Count == 0) { SetStatus("목록이 비어 있습니다"); return; }
         }
-        ShowMpv();
+        ShowMpv(append && _mpv.GetPlaylistCount() > 0);
         if (append && _mpv.GetPlaylistCount() > 0)
         {
             _mpv.PlaylistAppend(files);
