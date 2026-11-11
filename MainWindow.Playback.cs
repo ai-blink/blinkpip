@@ -685,18 +685,6 @@ public partial class MainWindow
         ShowMenu(anchor, m);
     }
 
-    private void MoreBtn_Click(object sender, RoutedEventArgs e)
-    {
-        var m = new WpfContextMenu();
-        m.Items.Add(Item("스크린샷", () => RunFeature("shot")));
-        m.Items.Add(Item("스크린샷 폴더 열기", () => RunFeature("shotdir")));
-        m.Items.Add(new WpfSeparator());
-        m.Items.Add(Item("한 프레임 앞", () => RunFeature("fstep")));
-        m.Items.Add(Item("한 프레임 뒤", () => RunFeature("fback")));
-        m.Items.Add(Item("구간 반복", () => RunFeature("abloop")));
-        ShowMenu((FrameworkElement)sender, m);
-    }
-
     // ───────── 북마크 ─────────
 
     private void Bookmark_Click(object sender, RoutedEventArgs e)

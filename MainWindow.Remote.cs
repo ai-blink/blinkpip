@@ -61,6 +61,7 @@ public partial class MainWindow
         {
             "repeat" => mpv ? new[] { "끔", "목록 전체", "한 곡" }[Math.Clamp(_mpv!.GetRepeat(), 0, 2)] : null,
             "abloop" => mpv ? new[] { "꺼짐", "A 지정됨", "반복 중" }[Math.Clamp(_mpv!.GetAbLoopState(), 0, 2)] : null,
+            "crop" => mpv && _mpv!.HasCropVideo ? $"{_mpv.GetCrop().Zoom:0.##}×" : null,
             "pip" => _isPipMode ? "켜짐" : "꺼짐",
             "mute" => _muted ? "켜짐" : "꺼짐",
             "full" => _isFullscreen ? "켜짐" : "꺼짐",
@@ -122,6 +123,7 @@ public partial class MainWindow
             case "fstep": _mpv!.FrameStep(); break;
             case "fback": _mpv!.FrameBackStep(); break;
             case "abloop": _mpv!.ToggleAbLoop(); break;
+            case "crop": OpenCrop(); break;
             case "settings": OpenSettings(); break;
         }
     }
