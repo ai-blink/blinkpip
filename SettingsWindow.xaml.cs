@@ -70,6 +70,7 @@ public partial class SettingsWindow : Window
         var v = typeof(SettingsWindow).Assembly.GetName().Version;
         InfoText.Text = $"버전 {v?.ToString(3) ?? "?"} · 설정 파일: %LOCALAPPDATA%\\HybridPipPlayer\\settings.json";
         InitDiagnostics(diagnostics);
+        RefreshHandoffRegistration();
         _loading = false;
     }
 

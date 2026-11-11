@@ -387,6 +387,7 @@ public partial class MpvPlayer : IDisposable
             IntPtr evPtr = mpv_wait_event(ctx, 0.5);
             if (evPtr == IntPtr.Zero) continue;
             var ev = Marshal.PtrToStructure<MpvEvent>(evPtr);
+            TrackHandoffEntry(ev);
             HandleSubtitleEvent(ev);
             switch (ev.EventId)
             {
@@ -456,6 +457,7 @@ public partial class MpvPlayer : IDisposable
         if (_ctx == IntPtr.Zero) return;
         IntPtr ctx = _ctx;
         _stop = true;
+        CancelHandoffSubtitle();
         mpv_wakeup(ctx);
         _eventThread?.Join(2000);
         _ctx = IntPtr.Zero;

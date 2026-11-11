@@ -53,7 +53,7 @@ public partial class MainWindow
             ApplyPlayerSettings();
             _mpv.SetVolume(_settings.DefaultVolume);
             _mpv.SetSpeed(_settings.DefaultSpeed);
-            _mpv.FileLoaded += () => Dispatcher.BeginInvoke(OnFileLoaded);
+            _mpv.FileLoaded += QueueFileLoaded;
             _mpv.FileEnded += eof => Dispatcher.BeginInvoke(() => OnFileEnded(eof));
         }
         _updatingUi = true;
@@ -130,15 +130,6 @@ public partial class MainWindow
     }
 
     // ───────── 열기 ─────────
-
-    // 외부(연결 프로그램, 두 번째 실행)에서 넘어온 파일/주소
-    private void OpenExternal(string path)
-    {
-        if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
-        Activate();
-        UrlInputBox.Text = path;
-        RouteMedia(path);
-    }
 
     // 로컬 파일들을 연다. 한 개면 같은 폴더의 미디어를 재생 목록으로 만든다(설정에서 끌 수 있음).
     private void OpenPaths(IReadOnlyList<string> paths, bool append = false)
@@ -294,18 +285,6 @@ public partial class MainWindow
     }
 
     // ───────── 이어 보기 / 최근 ─────────
-
-    private void OnFileLoaded()
-    {
-        if (_closing || _mpv == null) return;
-        string? path = _mpv.GetPath();
-        if (string.IsNullOrEmpty(path)) return;
-        _resumePath = path;
-        RecentStore.Add(path);
-        if (!_autoPaused && _mpv.GetPaused()) _mpv.SetPause(false); // 새 파일은 일시정지가 이어지지 않고 재생으로 시작한다
-        if (_listOpen) RefreshPlaylistRows(); // 다음 곡으로 넘어가면 현재 표시를 옮긴다
-        if (_settings.ResumePlayback && ResumeStore.Get(path) is { } pos && pos > 5) _mpv.SeekTo(pos);
-    }
 
     private void OnFileEnded(bool eof)
     {

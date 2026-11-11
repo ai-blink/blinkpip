@@ -182,9 +182,15 @@ function buildPip(win, video, cleanups) {
 
   const cc = el(doc, 'button', { id: 'cc', text: '자막', title: '자막 설정' });
   const setPop = el(doc, 'div', { id: 'setPop', class: 'pop' });
+  const sendApp = el(doc, 'button', { text: '앱으로', title: '현재 영상을 앱으로 보내기' });
+  sendApp.addEventListener('click', e => {
+    if (!e.isTrusted) return;
+    e.stopPropagation(); e.preventDefault();
+    HPP_HANDOFF_UI.open(video, () => location.href, doc);
+  });
   const ui = buildBar(doc, makeLocalPlayer(video), {
     seekSeconds: () => settings.seekSeconds,
-    extra: [cc], pops: [setPop], popAbove: true,
+    extra: [cc, sendApp], pops: [setPop], popAbove: true,
     onOrig: () => { bg({ type: 'focusTab' }); win.close(); }, // 닫히면 pagehide 정리가 영상을 원래 자리로 되돌린다
   });
   cc.onclick = () => ui.openPop(setPop, cc);
@@ -518,9 +524,13 @@ btn.style.cssText = btnCss;
 const btn2 = document.createElement('button');
 btn2.textContent = '무테';
 btn2.style.cssText = btnCss;
-document.documentElement.append(btn, btn2);
+const appBtn = document.createElement('button');
+appBtn.textContent = '앱으로';
+appBtn.title = '이 영상을 Hybrid PIP Player 앱으로 보내기';
+appBtn.style.cssText = btnCss;
+document.documentElement.append(btn, btn2, appBtn);
 let target = null, hideTimer = 0;
-const hideBtns = () => { btn.style.display = 'none'; btn2.style.display = 'none'; };
+const hideBtns = () => { btn.style.display = 'none'; btn2.style.display = 'none'; appBtn.style.display = 'none'; };
 
 const bigVideoAt = (x, y) => [...document.querySelectorAll('video')].find(v => {
   const r = v.getBoundingClientRect();
@@ -529,17 +539,19 @@ const bigVideoAt = (x, y) => [...document.querySelectorAll('video')].find(v => {
 
 let lastMove = 0;
 document.addEventListener('mousemove', e => {
-  if (pipWin || frameless) return;
+  if (pipWin || frameless || HPP_HANDOFF_UI.isOpen) return;
   if (e.timeStamp - lastMove < 100) return; // 전수 검사 비용을 줄인다
   lastMove = e.timeStamp;
-  const onBtn = e.target === btn || e.target === btn2;
+  const onBtn = e.target === btn || e.target === btn2 || e.target === appBtn;
   const v = onBtn ? target : bigVideoAt(e.clientX, e.clientY);
   if (v) {
     target = v;
     const r = v.getBoundingClientRect();
     btn2.style.left = Math.max(0, r.right - (IN_IFRAME ? 62 : 62 + 52)) + 'px'; // iframe에서는 PiP+ 자리까지 무테가 쓴다
     btn.style.left = Math.max(0, r.right - 62) + 'px';
-    btn.style.top = btn2.style.top = Math.max(0, r.top + 8) + 'px';
+    appBtn.style.left = Math.max(0, r.right - (IN_IFRAME ? 136 : 188)) + 'px';
+    btn.style.top = btn2.style.top = appBtn.style.top = Math.max(0, r.top + 8) + 'px';
+    appBtn.style.display = 'block';
     btn2.style.display = 'block';
     btn.style.display = IN_IFRAME ? 'none' : 'block'; // iframe 안에서는 PiP+ 버튼을 숨긴다
     clearTimeout(hideTimer);
@@ -550,9 +562,16 @@ document.addEventListener('mousemove', e => {
 btn.addEventListener('click', e => { if (!e.isTrusted) return; e.stopPropagation(); e.preventDefault(); if (target) openPip(target); hideBtns(); });
 btn2.addEventListener('click', e => { if (!e.isTrusted) return; e.stopPropagation(); e.preventDefault(); if (target) openFrameless(target); hideBtns(); });
 
+appBtn.addEventListener('click', e => {
+  if (!e.isTrusted) return;
+  e.stopPropagation(); e.preventDefault();
+  if (target) HPP_HANDOFF_UI.open(target, () => location.href);
+  hideBtns();
+});
+
 const pickVideo = () => (target?.isConnected && target) || [...document.querySelectorAll('video')].find(x => !x.paused) || document.querySelector('video');
 document.addEventListener('keydown', e => {
-  if (!e.altKey || !e.shiftKey) return;
+  if (HPP_HANDOFF_UI.isOpen || !e.altKey || !e.shiftKey) return;
   if (e.code === 'KeyP') { const v = pickVideo(); if (v) openPip(v); }
   else if (e.code === 'KeyO') { const v = pickVideo(); if (v) openFrameless(v); } // 무테(합성 PiP)
   else if (e.code === 'KeyN') { const v = pickVideo(); if (v) openNative(v); } // 원본 PiP(합성 없음, DRM·다른 출처 영상용)

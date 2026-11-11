@@ -145,6 +145,7 @@ public partial class MainWindow : Window
             _mpv = new MpvPlayer(MpvRenderPanel.Handle);
             AttachDiagnostics(_mpv);
             InitSubtitlePractice(_mpv);
+            InitHandoff(_mpv);
             _mpv.KeyAction += a => Dispatcher.BeginInvoke(() => DispatchShortcut(a));
             _mpv.VideoAspectChanged += a => Dispatcher.BeginInvoke(() =>
             {
@@ -167,7 +168,8 @@ public partial class MainWindow : Window
 
         // 다른 실행(연결 프로그램·더블클릭)이 넘기는 파일을 받고, 실행 인자로 받은 파일이 있으면 연다
         ((App)System.Windows.Application.Current).Instance.StartServer(path => Dispatcher.BeginInvoke(() => OpenExternal(path)));
-        if (App.StartupArg is { } arg) { UrlInputBox.Text = arg; RouteMedia(arg); }
+        if (App.StartupArg is { } arg) OpenExternal(arg);
+        if (App.StartupError is { } startupError) SetStatus(startupError);
     }
 
     private void SetStatus(string msg) => StatusText.Text = msg;
@@ -227,9 +229,9 @@ public partial class MainWindow : Window
         }
     }
 
-    private async Task RouteMediaAsync(string raw)
+    private async Task RouteMediaAsync(string raw, HandoffRequest? handoff = null)
     {
-        int revision = ++_diagnosticRouteRevision;
+        int revision = BeginMediaRoute();
         if (!TryNormalize(raw, out string target, out bool isOtt))
         {
             _diagnostics.Begin(raw, false);
@@ -257,6 +259,7 @@ public partial class MainWindow : Window
             if (_closing) return;
             _diagnostics.OpeningWeb();
             DrmWebView.CoreWebView2.Navigate(target);
+            FinishWebHandoff(handoff);
         }
         else
         {
@@ -267,7 +270,7 @@ public partial class MainWindow : Window
             // 로컬 파일·폴더는 같은 폴더의 영상으로 목록을 만든다(설정에서 끌 수 있음). 주소는 그대로 연다.
             if (File.Exists(target)) OpenPaths(new[] { target });
             else if (Directory.Exists(target)) OpenPaths(MediaFiles.FolderFiles(target, true));
-            else _mpv?.Load(target);
+            else LoadHandoffMedia(target, handoff, revision);
         }
     }
 

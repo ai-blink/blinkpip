@@ -1,0 +1,732 @@
+{
+  "status": "accepted transport-independent contract; adapters await user mode selection",
+  "version": 1,
+  "dtoCases": [
+    {
+      "id": "minimal",
+      "input": {
+        "v": 1,
+        "url": "https://example.test/video"
+      },
+      "accept": true
+    },
+    {
+      "id": "all-options",
+      "input": {
+        "v": 1,
+        "url": "https://example.test/video.mp4",
+        "t": 754.25,
+        "sub": "https://example.test/ko.vtt",
+        "speed": 1.25,
+        "pip": true
+      },
+      "accept": true
+    },
+    {
+      "id": "zero-and-false-are-explicit",
+      "input": {
+        "v": 1,
+        "url": "https://example.test/video",
+        "t": 0,
+        "speed": 0.25,
+        "pip": false
+      },
+      "accept": true
+    },
+    {
+      "id": "max-values",
+      "input": {
+        "v": 1,
+        "url": "https://example.test/video",
+        "t": 31536000,
+        "speed": 4
+      },
+      "accept": true
+    },
+    {
+      "id": "missing-version",
+      "input": {
+        "url": "https://example.test/video"
+      },
+      "accept": false
+    },
+    {
+      "id": "wrong-version",
+      "input": {
+        "v": 2,
+        "url": "https://example.test/video"
+      },
+      "accept": false
+    },
+    {
+      "id": "string-version",
+      "input": {
+        "v": "1",
+        "url": "https://example.test/video"
+      },
+      "accept": false
+    },
+    {
+      "id": "missing-url",
+      "input": {
+        "v": 1
+      },
+      "accept": false
+    },
+    {
+      "id": "null-url",
+      "input": {
+        "v": 1,
+        "url": null
+      },
+      "accept": false
+    },
+    {
+      "id": "array-root",
+      "input": [],
+      "accept": false
+    },
+    {
+      "id": "null-root",
+      "input": null,
+      "accept": false
+    },
+    {
+      "id": "extra-cookie-field",
+      "input": {
+        "v": 1,
+        "url": "https://example.test/video",
+        "cookies": "synthetic"
+      },
+      "accept": false
+    },
+    {
+      "id": "extra-referrer-field",
+      "input": {
+        "v": 1,
+        "url": "https://example.test/video",
+        "referrer": "https://example.test/"
+      },
+      "accept": false
+    },
+    {
+      "id": "prototype-field",
+      "input": {
+        "v": 1,
+        "url": "https://example.test/video",
+        "__proto__": {}
+      },
+      "accept": false
+    },
+    {
+      "id": "negative-time",
+      "input": {
+        "v": 1,
+        "url": "https://example.test/video",
+        "t": -0.1
+      },
+      "accept": false
+    },
+    {
+      "id": "time-above-max",
+      "input": {
+        "v": 1,
+        "url": "https://example.test/video",
+        "t": 31536000.01
+      },
+      "accept": false
+    },
+    {
+      "id": "time-string",
+      "input": {
+        "v": 1,
+        "url": "https://example.test/video",
+        "t": "12"
+      },
+      "accept": false
+    },
+    {
+      "id": "time-bool",
+      "input": {
+        "v": 1,
+        "url": "https://example.test/video",
+        "t": true
+      },
+      "accept": false
+    },
+    {
+      "id": "null-time",
+      "input": {
+        "v": 1,
+        "url": "https://example.test/video",
+        "t": null
+      },
+      "accept": false
+    },
+    {
+      "id": "speed-too-low",
+      "input": {
+        "v": 1,
+        "url": "https://example.test/video",
+        "speed": 0.24
+      },
+      "accept": false
+    },
+    {
+      "id": "speed-too-high",
+      "input": {
+        "v": 1,
+        "url": "https://example.test/video",
+        "speed": 4.01
+      },
+      "accept": false
+    },
+    {
+      "id": "speed-string",
+      "input": {
+        "v": 1,
+        "url": "https://example.test/video",
+        "speed": "1.25"
+      },
+      "accept": false
+    },
+    {
+      "id": "pip-string",
+      "input": {
+        "v": 1,
+        "url": "https://example.test/video",
+        "pip": "true"
+      },
+      "accept": false
+    },
+    {
+      "id": "pip-number",
+      "input": {
+        "v": 1,
+        "url": "https://example.test/video",
+        "pip": 1
+      },
+      "accept": false
+    },
+    {
+      "id": "subtitle-language-is-not-url",
+      "input": {
+        "v": 1,
+        "url": "https://example.test/video",
+        "sub": "ko"
+      },
+      "accept": false
+    },
+    {
+      "id": "subtitle-local-file",
+      "input": {
+        "v": 1,
+        "url": "https://example.test/video",
+        "sub": "file:///C:/private.srt"
+      },
+      "accept": false
+    },
+    {
+      "id": "subtitle-signed",
+      "input": {
+        "v": 1,
+        "url": "https://example.test/video",
+        "sub": "https://example.test/ko.vtt?sig=synthetic"
+      },
+      "accept": false
+    }
+  ],
+  "urlCases": [
+    {
+      "id": "http",
+      "input": "http://example.test/video.mp4",
+      "accept": true
+    },
+    {
+      "id": "public-query",
+      "input": "https://example.test/watch?id=demo&lang=ko",
+      "accept": true
+    },
+    {
+      "id": "encoded-unicode-path",
+      "input": "https://example.test/%ED%95%9C%EA%B8%80.mp4",
+      "accept": true
+    },
+    {
+      "id": "relative",
+      "input": "/video.mp4",
+      "accept": false
+    },
+    {
+      "id": "scheme-relative",
+      "input": "//example.test/video.mp4",
+      "accept": false
+    },
+    {
+      "id": "file",
+      "input": "file:///C:/private.mp4",
+      "accept": false
+    },
+    {
+      "id": "blob",
+      "input": "blob:https://example.test/123",
+      "accept": false
+    },
+    {
+      "id": "data",
+      "input": "data:video/mp4;base64,AAAA",
+      "accept": false
+    },
+    {
+      "id": "javascript",
+      "input": "javascript:alert(1)",
+      "accept": false
+    },
+    {
+      "id": "ftp",
+      "input": "ftp://example.test/video.mp4",
+      "accept": false
+    },
+    {
+      "id": "userinfo",
+      "input": "https://user:synthetic@example.test/video.mp4",
+      "accept": false
+    },
+    {
+      "id": "username-only",
+      "input": "https://user@example.test/video.mp4",
+      "accept": false
+    },
+    {
+      "id": "fragment",
+      "input": "https://example.test/video#t=10",
+      "accept": false
+    },
+    {
+      "id": "oauth-fragment",
+      "input": "https://example.test/video#access_token=synthetic",
+      "accept": false
+    },
+    {
+      "id": "raw-crlf",
+      "input": "https://example.test/video\r\n",
+      "accept": false
+    },
+    {
+      "id": "encoded-crlf",
+      "input": "https://example.test/video%0d%0a",
+      "accept": false
+    },
+    {
+      "id": "encoded-nul",
+      "input": "https://example.test/video%00",
+      "accept": false
+    },
+    {
+      "id": "backslash",
+      "input": "https:\\example.test\\video",
+      "accept": false
+    },
+    {
+      "id": "whitespace",
+      "input": " https://example.test/video ",
+      "accept": false
+    },
+    {
+      "id": "token",
+      "input": "https://example.test/video?token=synthetic",
+      "accept": false
+    },
+    {
+      "id": "mixed-case-token",
+      "input": "https://example.test/video?AcCeSs_ToKeN=synthetic",
+      "accept": false
+    },
+    {
+      "id": "encoded-token-key",
+      "input": "https://example.test/video?%74oken=synthetic",
+      "accept": false
+    },
+    {
+      "id": "nested-encoded-token-key",
+      "input": "https://example.test/video?%2574oken=synthetic",
+      "accept": false
+    },
+    {
+      "id": "aws-signature",
+      "input": "https://example.test/video?X-Amz-Signature=synthetic",
+      "accept": false
+    },
+    {
+      "id": "google-credential",
+      "input": "https://example.test/video?X-Goog-Credential=synthetic",
+      "accept": false
+    },
+    {
+      "id": "azure-sas-signature",
+      "input": "https://example.test/video?sv=1&sig=synthetic",
+      "accept": false
+    },
+    {
+      "id": "cloudfront-policy",
+      "input": "https://example.test/video?Policy=synthetic&Key-Pair-Id=synthetic",
+      "accept": false
+    },
+    {
+      "id": "akamai",
+      "input": "https://example.test/video?hdnts=synthetic",
+      "accept": false
+    },
+    {
+      "id": "oauth-code",
+      "input": "https://example.test/callback?code=synthetic&state=synthetic",
+      "accept": false
+    },
+    {
+      "id": "session",
+      "input": "https://example.test/video?session_id=synthetic",
+      "accept": false
+    },
+    {
+      "id": "auth",
+      "input": "https://example.test/video?auth=synthetic",
+      "accept": false
+    },
+    {
+      "id": "apikey",
+      "input": "https://example.test/video?api-key=synthetic",
+      "accept": false
+    },
+    {
+      "id": "sibling-ordinary-monkey",
+      "input": "https://example.test/watch?monkey=video",
+      "accept": true
+    },
+    {
+      "id": "prefix-auth",
+      "input": "https://example.test/v?authentication=synthetic",
+      "accept": false
+    },
+    {
+      "id": "suffix-token",
+      "input": "https://example.test/v?csrfToken=synthetic",
+      "accept": false
+    },
+    {
+      "id": "bearer-value",
+      "input": "https://example.test/v?q=Bearer%20synthetic",
+      "accept": false
+    },
+    {
+      "id": "jwt-value",
+      "input": "https://example.test/v?q=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ4In0.c2ln",
+      "accept": false
+    },
+    {
+      "id": "non-jwt-eyJ",
+      "input": "https://example.test/v?q=eyJordinary",
+      "accept": true
+    },
+    {
+      "id": "missing-authority",
+      "input": "https:example.test/v",
+      "accept": false
+    },
+    {
+      "id": "leading-space-bearer-value",
+      "input": "https://example.test/v?value=%20Bearer%20synthetic",
+      "accept": false
+    }
+  ],
+  "snapshotCases": [
+    {
+      "id": "direct-video",
+      "snapshot": {
+        "connected": true,
+        "currentSrc": "https://media.example.test/video.mp4",
+        "pageUrl": "https://example.test/watch/123",
+        "currentTime": 12.5,
+        "playbackRate": 1.25
+      },
+      "include": {
+        "time": true,
+        "speed": true,
+        "subtitle": false,
+        "pip": false
+      },
+      "expected": {
+        "v": 1,
+        "url": "https://media.example.test/video.mp4",
+        "t": 12.5,
+        "speed": 1.25
+      }
+    },
+    {
+      "id": "youtube-page-over-signed-source",
+      "snapshot": {
+        "connected": true,
+        "currentSrc": "https://media.example.test/videoplayback?signature=synthetic",
+        "pageUrl": "https://www.youtube.com/watch?v=jfKfPfyJRdk&list=ignored",
+        "currentTime": 0,
+        "playbackRate": 1
+      },
+      "include": {
+        "time": true,
+        "speed": false,
+        "subtitle": false,
+        "pip": true
+      },
+      "expected": {
+        "v": 1,
+        "url": "https://www.youtube.com/watch?v=jfKfPfyJRdk",
+        "t": 0,
+        "pip": true
+      }
+    },
+    {
+      "id": "blob-iframe-fallback",
+      "snapshot": {
+        "connected": true,
+        "currentSrc": "blob:https://player.example.test/123",
+        "pageUrl": "https://player.example.test/embed/123",
+        "currentTime": 8,
+        "playbackRate": 1
+      },
+      "include": {
+        "time": true,
+        "speed": false,
+        "subtitle": false,
+        "pip": false
+      },
+      "expected": {
+        "v": 1,
+        "url": "https://player.example.test/embed/123",
+        "t": 8
+      }
+    },
+    {
+      "id": "selected-public-track",
+      "snapshot": {
+        "connected": true,
+        "currentSrc": "https://example.test/video.mp4",
+        "pageUrl": "https://example.test/watch",
+        "currentTime": 1,
+        "playbackRate": 1,
+        "subtitleSrc": "https://example.test/ko.vtt"
+      },
+      "include": {
+        "time": false,
+        "speed": false,
+        "subtitle": true,
+        "pip": false
+      },
+      "expected": {
+        "v": 1,
+        "url": "https://example.test/video.mp4",
+        "sub": "https://example.test/ko.vtt"
+      }
+    },
+    {
+      "id": "disconnected-video",
+      "snapshot": {
+        "connected": false,
+        "currentSrc": "https://example.test/video.mp4",
+        "pageUrl": "https://example.test/watch",
+        "currentTime": 1,
+        "playbackRate": 1
+      },
+      "include": {
+        "time": true
+      },
+      "reject": true
+    },
+    {
+      "id": "no-safe-source",
+      "snapshot": {
+        "connected": true,
+        "currentSrc": "blob:https://example.test/123",
+        "pageUrl": "https://example.test/watch?token=synthetic",
+        "currentTime": 1,
+        "playbackRate": 1
+      },
+      "include": {
+        "time": true
+      },
+      "reject": true
+    },
+    {
+      "id": "requested-subtitle-unavailable",
+      "snapshot": {
+        "connected": true,
+        "currentSrc": "https://example.test/video.mp4",
+        "pageUrl": "https://example.test/watch",
+        "currentTime": 1,
+        "playbackRate": 1
+      },
+      "include": {
+        "subtitle": true
+      },
+      "reject": true
+    },
+    {
+      "id": "requested-subtitle-signed",
+      "snapshot": {
+        "connected": true,
+        "currentSrc": "https://example.test/video.mp4",
+        "pageUrl": "https://example.test/watch",
+        "currentTime": 1,
+        "playbackRate": 1,
+        "subtitleSrc": "https://example.test/ko.vtt?token=synthetic"
+      },
+      "include": {
+        "subtitle": true
+      },
+      "reject": true
+    }
+  ],
+  "rawEnvelopeCases": [
+    {
+      "id": "protocol-minimal",
+      "transport": "protocol",
+      "input": "hybridpip://play?v=1&url=https%3A%2F%2Fexample.test%2Fvideo",
+      "accept": true
+    },
+    {
+      "id": "protocol-zero-false",
+      "transport": "protocol",
+      "input": "hybridpip://play?v=1&url=https%3A%2F%2Fexample.test%2Fvideo&t=0&pip=0",
+      "accept": true
+    },
+    {
+      "id": "protocol-duplicate-url",
+      "transport": "protocol",
+      "input": "hybridpip://play?v=1&url=https%3A%2F%2Fexample.test%2Fa&url=https%3A%2F%2Fexample.test%2Fb",
+      "accept": false
+    },
+    {
+      "id": "protocol-unknown",
+      "transport": "protocol",
+      "input": "hybridpip://play?v=1&url=https%3A%2F%2Fexample.test%2Fvideo&cookie=synthetic",
+      "accept": false
+    },
+    {
+      "id": "protocol-wrong-authority",
+      "transport": "protocol",
+      "input": "hybridpip://open?v=1&url=https%3A%2F%2Fexample.test%2Fvideo",
+      "accept": false
+    },
+    {
+      "id": "protocol-extra-path",
+      "transport": "protocol",
+      "input": "hybridpip://play/extra?v=1&url=https%3A%2F%2Fexample.test%2Fvideo",
+      "accept": false
+    },
+    {
+      "id": "protocol-double-encoded-url",
+      "transport": "protocol",
+      "input": "hybridpip://play?v=1&url=https%253A%252F%252Fexample.test%252Fvideo",
+      "accept": false
+    },
+    {
+      "id": "protocol-malformed-escape",
+      "transport": "protocol",
+      "input": "hybridpip://play?v=1&url=https%3A%2F%2Fexample.test%2F%ZZ",
+      "accept": false
+    },
+    {
+      "id": "protocol-nonfinite",
+      "transport": "protocol",
+      "input": "hybridpip://play?v=1&url=https%3A%2F%2Fexample.test%2Fvideo&t=NaN",
+      "accept": false
+    },
+    {
+      "id": "protocol-comma-number",
+      "transport": "protocol",
+      "input": "hybridpip://play?v=1&url=https%3A%2F%2Fexample.test%2Fvideo&speed=1%2C25",
+      "accept": false
+    },
+    {
+      "id": "native-typed",
+      "transport": "native-json",
+      "input": "{\"v\":1,\"url\":\"https://example.test/video\",\"t\":0,\"pip\":false}",
+      "accept": true
+    },
+    {
+      "id": "native-duplicate-url",
+      "transport": "native-json",
+      "input": "{\"v\":1,\"url\":\"https://example.test/a\",\"url\":\"https://example.test/b\"}",
+      "accept": false
+    },
+    {
+      "id": "native-unknown-token",
+      "transport": "native-json",
+      "input": "{\"v\":1,\"url\":\"https://example.test/a\",\"token\":\"synthetic\"}",
+      "accept": false
+    },
+    {
+      "id": "json-unpaired-surrogate",
+      "transport": "native-json",
+      "input": "{\"v\":1,\"url\":\"https://example.test/\\uD800\"}",
+      "accept": false
+    },
+    {
+      "id": "json-sub-surrogate",
+      "transport": "native-json",
+      "input": "{\"v\":1,\"url\":\"https://example.test/v\",\"sub\":\"https://example.test/\\uDC00\"}",
+      "accept": false
+    },
+    {
+      "id": "protocol-canonical-root-path",
+      "transport": "protocol",
+      "input": "hybridpip://play/?v=1&url=https%3A%2F%2Fexample.test%2Fvideo",
+      "accept": true
+    }
+  ],
+  "generatedCases": [
+    {
+      "id": "url-byte-limit",
+      "make": "https://example.test/ + ASCII a to exactly4096UTF8bytes",
+      "accept": true
+    },
+    {
+      "id": "url-byte-over",
+      "make": "https://example.test/ + ASCII a to4097UTF8bytes",
+      "accept": false
+    },
+    {
+      "id": "unicode-byte-over",
+      "make": "URL path with Korean characters under4096UTF16units but over4096UTF8bytes",
+      "accept": false
+    },
+    {
+      "id": "envelope-over",
+      "make": "individually valid url/sub whose chosen encoded envelope exceeds16384UTF8bytes",
+      "accept": false
+    },
+    {
+      "id": "nan-time",
+      "make": "DTO t=JS NaN or C# double.NaN without JSON serialization coercion",
+      "accept": false
+    },
+    {
+      "id": "infinite-speed",
+      "make": "DTO speed=positive Infinity before serialization",
+      "accept": false
+    },
+    {
+      "id": "prototype-own-key",
+      "make": "Object.create(null) then assign own __proto__ field",
+      "accept": false
+    },
+    {
+      "id": "sender-page-fake",
+      "make": "runtime message sender.id differs from chrome.runtime.id",
+      "accept": false
+    },
+    {
+      "id": "untrusted-click",
+      "make": "click.isTrusted=false must never invoke chosen transport",
+      "accept": false
+    }
+  ]
+}

@@ -14,7 +14,7 @@ public partial class App : System.Windows.Application
     protected override void OnStartup(StartupEventArgs e)
     {
         // 첫 번째 인자(옵션이 아닌 것)를 열 대상으로 본다. 연결 프로그램은 "%1" 로 경로 하나를 넘긴다.
-        StartupArg = e.Args.FirstOrDefault(a => !a.StartsWith("--") && a.Trim().Length > 0);
+        PrepareStartupArgument(e.Args);
         if (StartupArg != null && SingleInstance.TrySendToRunning(StartupArg))
         {
             Shutdown(); // 이미 떠 있는 창이 받았다
