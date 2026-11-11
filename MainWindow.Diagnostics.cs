@@ -11,6 +11,7 @@ public partial class MainWindow
 
     private void ShowMpv()
     {
+        if (!_engineA) ResumePracticeForExistingMedia();
         ++_diagnosticRouteRevision; // invalidate a pending asynchronous OTT initialization
         DrmWebView.Visibility = Visibility.Collapsed;
         MpvHost.Visibility = Visibility.Visible;

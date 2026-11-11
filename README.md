@@ -23,6 +23,7 @@ WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 
 | `SettingsWindow.xaml(.cs)` | 설정 창(재생, 모양, PIP, 오디오·자막, 화면·소리 조절, 북마크·정보) |
 | `RemoteWindow.xaml(.cs)`, `FeatureCatalog.cs` | 리모컨 창과 올릴 수 있는 기능 목록 |
 | `PipControls.xaml(.cs)`, `LockOverlay.cs` | PIP 컨트롤 줄, PIP 왼쪽 위 자물쇠 버튼(별도 최상위 창) |
+| `MpvPlayer.Subtitles.cs`, `SubtitlePracticeController.cs`, `SubtitlePracticeSettings.cs`, `SubtitlePracticeWindow.cs`, `MainWindow.Subtitles.cs` | 자막 속성 관찰, 문장 반복 상태, 연습 설정·창·메뉴 연결 |
 | `MpvPlayer.cs` | libmpv P/Invoke 래퍼(옵션, 이벤트 스레드, 로그, 앰비언트 필터, SponsorBlock 설정, 재생 목록·트랙) |
 | `AppSettings.cs`, `Bookmark.cs`, `RecentStore.cs`, `ResumeStore.cs` | 설정, 북마크, 최근 재생, 이어 보기 저장소(`%LocalAppData%\HybridPipPlayer\` 아래 json) |
 | `MediaFiles.cs`, `MediaSession.cs`, `FileAssociation.cs`, `SingleInstance.cs` | 미디어 확장자·폴더 목록·m3u, 윈도우 미디어 컨트롤 연동, 연결 프로그램, 단일 실행 |
@@ -61,6 +62,12 @@ dotnet run --project C:\ai\projects\HybridPipPlayer
 ## 화면 자르기
 
 엔진 A 영상 재생 중 더보기 → **영역 · 화면 자르기** 또는 리모컨의 **영역**에서 1~4배 확대와 보는 위치를 조절한다. 전체·중앙 2배·오른쪽 위 버튼과 이름별 저장/불러오기/삭제를 지원한다. `%LOCALAPPDATA%\HybridPipPlayer\crops.json`에 해상도와 무관한 비율로 최대 50개를 저장한다. OTT에서는 사용할 수 없다.
+
+## 자막 연습
+
+엔진 A의 자막 메뉴 → **자막 연습** 또는 리모컨의 **자막 연습**에서 텍스트 자막으로 연습한다. 문장 끝 자동 정지, 첫 재생을 포함한 1~5회 반복 후 정지, 현재/선택 문장 다시 듣기를 지원한다. 목록은 클릭으로 선택하고 Enter·두 번 클릭·다시 듣기 버튼으로 이동한다. 두 번째 자막은 기존 자막 트랙을 함께 표시하며 번역을 생성하지 않는다.
+
+자막 지연과 재생 속도를 반영하고, 일반 A–B 반복과 동시에 켜지지 않는다. 파일·기본 자막 트랙·수동 탐색이 바뀌면 이전 문장 반복을 취소한다. 모드와 횟수는 `%LOCALAPPDATA%\HybridPipPlayer\subtitle-practice.json`에 저장한다. 목록은 메모리에 읽힌 자막 범위이며 웹 영상은 일부만 표시될 수 있다. 이미지 자막·끝 시각을 알 수 없는 문장·OTT 자막은 연습 대상에서 제외한다. 자막 자체의 속도/프레임 변환(`sub-speed`, `sub-fps`)을 별도로 변경한 경우 시간 제어를 끄고 안내한다. OTT 보호 영상 시작 감지·자막 읽기는 **확인 필요**다.
 
 ## 단축키
 

@@ -101,6 +101,7 @@ public partial class MpvPlayer : IDisposable
         Command("keybind", "MBTN_LEFT_DBL", "ignore");
         InitializeDefaultShortcuts();
         mpv_request_log_messages(_ctx, ToUtf8("v"));
+        ObserveSubtitleProperties();
         _eventThread = new Thread(EventLoop) { IsBackground = true, Name = "mpv-events" };
         _eventThread.Start();
     }
@@ -176,9 +177,9 @@ public partial class MpvPlayer : IDisposable
     public double? GetDuration() => GetDouble("duration");
     public bool GetPaused() => GetProperty("pause") == "yes";
     public double? GetVolume() => GetDouble("volume");
-    public void SeekTo(double seconds) => Command("seek", Inv(seconds), "absolute");
+    public void SeekTo(double seconds) { SubtitleUserSeekRequested?.Invoke(); Command("seek", Inv(seconds), "absolute"); }
     // exact: 기본 상대 이동은 가까운 키프레임으로 붙어서 5초 단위가 어긋난다(키프레임 간격이 긴 영상일수록 심함)
-    public void SeekRelative(double seconds) => Command("seek", Inv(seconds), "relative+exact");
+    public void SeekRelative(double seconds) { SubtitleUserSeekRequested?.Invoke(); Command("seek", Inv(seconds), "relative+exact"); }
     public void SetVolume(double percent) => SetProperty("volume", Inv(Math.Clamp(percent, 0, 100)));
     public void SetMute(bool mute) => SetProperty("mute", mute ? "yes" : "no");
     public bool GetMuted() => GetProperty("mute") == "yes";
@@ -303,7 +304,7 @@ public partial class MpvPlayer : IDisposable
             string lang = GetProperty($"track-list/{i}/lang") ?? "";
             string title = GetProperty($"track-list/{i}/title") ?? "";
             string label = $"{id}. {(lang.Length > 0 ? lang : "알 수 없음")}{(title.Length > 0 ? " · " + title : "")}";
-            list.Add(new TrackInfo(id, label, GetProperty($"track-list/{i}/selected") == "yes"));
+            list.Add(new TrackInfo(id, label, type == "sub" ? GetProperty("sid") == id.ToString(System.Globalization.CultureInfo.InvariantCulture) : GetProperty($"track-list/{i}/selected") == "yes"));
         }
         return list;
     }
@@ -386,6 +387,7 @@ public partial class MpvPlayer : IDisposable
             IntPtr evPtr = mpv_wait_event(ctx, 0.5);
             if (evPtr == IntPtr.Zero) continue;
             var ev = Marshal.PtrToStructure<MpvEvent>(evPtr);
+            HandleSubtitleEvent(ev);
             switch (ev.EventId)
             {
                 case EVENT_SHUTDOWN:

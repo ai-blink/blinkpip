@@ -159,6 +159,7 @@ public partial class MainWindow
             return;
         }
         _diagnostics.Begin(files[0], false);
+        SetPracticeEngine(true);
         SaveResume();
         if (files.Count == 1 && _settings.AutoPlaylist && File.Exists(files[0]) && MediaFiles.FolderPlaylist(files[0]) is { } fp)
             _mpv.LoadList(fp.Files, fp.Index);
@@ -665,25 +666,6 @@ public partial class MainWindow
     private void AudioBtn_Click(object sender, RoutedEventArgs e) => ShowAudioMenu();
 
     private void ShowAudioMenu() => ShowTrackMenu(AudioBtn, "audio", "aid", "소리");
-
-    private void ShowTrackMenu(FrameworkElement anchor, string type, string kind, string title)
-    {
-        var m = new WpfContextMenu();
-        var tracks = _engineA && _mpv != null ? _mpv.GetTracks(type) : new List<MpvPlayer.TrackInfo>();
-        if (tracks.Count == 0 && type == "audio") m.Items.Add(new WpfMenuItem { Header = "선택할 소리 트랙이 없습니다", IsEnabled = false });
-        if (type == "sub") m.Items.Add(Item("자막 끄기", () => _mpv?.SetTrack(kind, null), tracks.All(t => !t.Selected)));
-        foreach (var t in tracks)
-        {
-            int id = t.Id;
-            m.Items.Add(Item(t.Label, () => _mpv?.SetTrack(kind, id), t.Selected));
-        }
-        if (type == "sub")
-        {
-            m.Items.Add(new WpfSeparator());
-            m.Items.Add(Item("자막 파일 열기…", OpenSubtitleFile));
-        }
-        ShowMenu(anchor, m);
-    }
 
     // ───────── 북마크 ─────────
 

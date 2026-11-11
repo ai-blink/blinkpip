@@ -144,6 +144,7 @@ public partial class MainWindow : Window
         {
             _mpv = new MpvPlayer(MpvRenderPanel.Handle);
             AttachDiagnostics(_mpv);
+            InitSubtitlePractice(_mpv);
             _mpv.KeyAction += a => Dispatcher.BeginInvoke(() => DispatchShortcut(a));
             _mpv.VideoAspectChanged += a => Dispatcher.BeginInvoke(() =>
             {
@@ -237,6 +238,7 @@ public partial class MainWindow : Window
         }
         SetStatus("");
         _diagnostics.Begin(target, isOtt);
+        if (isOtt || (!File.Exists(target) && !Directory.Exists(target))) SetPracticeEngine(!isOtt);
 
         if (isOtt)
         {

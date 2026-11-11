@@ -30,6 +30,7 @@ public static class FeatureCatalog
         new("repeat",  "반복",            "", null,   "list", true),
         new("shuffle", "섞기",            "", null,   "list", true),
         new("sub",     "자막 선택",       "",       "subtitle", "av", true),
+        new("practice", "자막 연습", "", null, "av", true),
         new("audio",   "소리 선택",       "",       "audio",    "av", true),
         new("sfile",   "자막 파일 열기",  "", null,   "av",   true),
         new("pip",     "PIP",             "", null,   "view", false, "Ctrl+Alt+P"),

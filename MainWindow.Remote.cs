@@ -122,7 +122,8 @@ public partial class MainWindow
             case "shotdir": OpenFolder(shotDir); break;
             case "fstep": _mpv!.FrameStep(); break;
             case "fback": _mpv!.FrameBackStep(); break;
-            case "abloop": _mpv!.ToggleAbLoop(); break;
+            case "practice": OpenSubtitlePractice(); break;
+            case "abloop": ToggleAbLoopWithPracticeReset(); break;
             case "crop": OpenCrop(); break;
             case "settings": OpenSettings(); break;
         }
