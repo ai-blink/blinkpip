@@ -9,7 +9,7 @@ namespace HybridPipPlayer;
 public class MpvPlayer : IDisposable
 {
     private const string DllName = "libmpv-2.dll";
-    private const int EVENT_SHUTDOWN = 1, EVENT_LOG_MESSAGE = 2, EVENT_END_FILE = 7, EVENT_FILE_LOADED = 8, EVENT_CLIENT_MESSAGE = 16, EVENT_VIDEO_RECONFIG = 17;
+    private const int EVENT_SHUTDOWN = 1, EVENT_LOG_MESSAGE = 2, EVENT_START_FILE = 6, EVENT_PLAYBACK_RESTART = 21, EVENT_END_FILE = 7, EVENT_FILE_LOADED = 8, EVENT_CLIENT_MESSAGE = 16, EVENT_VIDEO_RECONFIG = 17;
     private const int END_FILE_REASON_EOF = 0, END_FILE_REASON_ERROR = 4;
 
     private IntPtr _ctx;
@@ -43,6 +43,12 @@ public class MpvPlayer : IDisposable
 
     /// <summary>파일 재생이 끝났을 때. true 면 끝까지 재생(EOF)한 것 (이벤트 스레드에서 호출됨)</summary>
     public event Action<bool>? FileEnded;
+
+    public event Action<string>? DiagnosticStarted;
+    public event Action<string, string, string>? DiagnosticLog;
+    public event Action<int, string>? DiagnosticEnded;
+    public event Action<bool>? DiagnosticPlaybackStarted;
+    public string Version => GetProperty("mpv-version") ?? "확인 필요";
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)] private static extern IntPtr mpv_create();
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)] private static extern int mpv_initialize(IntPtr ctx);
@@ -118,7 +124,7 @@ public class MpvPlayer : IDisposable
         // 재생 단축키는 건너뛰기 간격을 설정에서 바꿀 수 있어야 하므로 mpv 기본 동작 대신 호스트가 처리한다
         foreach (var (key, id, repeat) in HostKeys)
             Command("keybind", key, (repeat ? "repeatable " : "") + "script-message " + id);
-        mpv_request_log_messages(_ctx, ToUtf8("warn"));
+        mpv_request_log_messages(_ctx, ToUtf8("v"));
         _eventThread = new Thread(EventLoop) { IsBackground = true, Name = "mpv-events" };
         _eventThread.Start();
     }
@@ -413,7 +419,8 @@ public class MpvPlayer : IDisposable
                     string level = Marshal.PtrToStringUTF8(lm.Level) ?? "";
                     string text = (Marshal.PtrToStringUTF8(lm.Text) ?? "").TrimEnd();
                     string prefix = Marshal.PtrToStringUTF8(lm.Prefix) ?? "";
-                    Log($"[{level}] {prefix}: {text}");
+                    DiagnosticLog?.Invoke(prefix, level, text);
+                    if (level is "warn" or "error" or "fatal") Log($"[{level}] {prefix}: {text}");
                     if (level is "error" or "fatal") LogError?.Invoke($"{prefix}: {text}");
                     break;
                 case EVENT_CLIENT_MESSAGE when ev.Data != IntPtr.Zero:
@@ -423,6 +430,12 @@ public class MpvPlayer : IDisposable
                         string? first = Marshal.PtrToStringUTF8(Marshal.ReadIntPtr(cm.Args));
                         if (first != null && first.StartsWith("hpp-", StringComparison.Ordinal)) KeyAction?.Invoke(first);
                     }
+                    break;
+                case EVENT_START_FILE:
+                    DiagnosticStarted?.Invoke(GetPath() ?? "확인 필요");
+                    break;
+                case EVENT_PLAYBACK_RESTART:
+                    DiagnosticPlaybackStarted?.Invoke(GetPaused());
                     break;
                 case EVENT_FILE_LOADED:
                     FileLoaded?.Invoke();
@@ -435,6 +448,7 @@ public class MpvPlayer : IDisposable
                     break;
                 case EVENT_END_FILE when ev.Data != IntPtr.Zero:
                     var ef = Marshal.PtrToStructure<MpvEventEndFile>(ev.Data);
+                    DiagnosticEnded?.Invoke(ef.Reason, ef.Reason == END_FILE_REASON_ERROR ? ErrorString(ef.Error) : "");
                     if (ef.Reason == END_FILE_REASON_ERROR) Report("재생 실패: " + ErrorString(ef.Error));
                     FileEnded?.Invoke(ef.Reason == END_FILE_REASON_EOF);
                     break;
@@ -451,7 +465,7 @@ public class MpvPlayer : IDisposable
     private readonly object _logLock = new();
     private void Log(string line)
     {
-        try { lock (_logLock) File.AppendAllText(_logPath, $"{DateTime.Now:HH:mm:ss} {line}{Environment.NewLine}"); }
+        try { lock (_logLock) File.AppendAllText(_logPath, $"{DateTime.Now:HH:mm:ss} {DiagInfo.Redact(line)}{Environment.NewLine}"); }
         catch { }
     }
 

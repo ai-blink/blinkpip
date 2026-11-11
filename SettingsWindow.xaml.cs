@@ -28,7 +28,7 @@ public partial class SettingsWindow : Window
     private static readonly double[] Speeds = { 0.5, 0.75, 1.0, 1.25, 1.5, 2.0 };
 
     public SettingsWindow(AppSettings settings, ObservableCollection<Bookmark> bookmarks,
-                          Func<List<(string Name, string Description)>> getDevices)
+                          Func<List<(string Name, string Description)>> getDevices, DiagInfo? diagnostics = null)
     {
         InitializeComponent();
         Nav_SelectionChanged(Nav, null!);
@@ -91,6 +91,7 @@ public partial class SettingsWindow : Window
         }
         var v = typeof(SettingsWindow).Assembly.GetName().Version;
         InfoText.Text = $"버전 {v?.ToString(3) ?? "?"} · 설정 파일: %LOCALAPPDATA%\\HybridPipPlayer\\settings.json";
+        InitDiagnostics(diagnostics);
         _loading = false;
     }
 

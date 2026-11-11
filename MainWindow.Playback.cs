@@ -140,12 +140,6 @@ public partial class MainWindow
         RouteMedia(path);
     }
 
-    private void ShowMpv()
-    {
-        DrmWebView.Visibility = Visibility.Collapsed;
-        MpvHost.Visibility = Visibility.Visible;
-    }
-
     // 로컬 파일들을 연다. 한 개면 같은 폴더의 미디어를 재생 목록으로 만든다(설정에서 끌 수 있음).
     private void OpenPaths(IReadOnlyList<string> paths, bool append = false)
     {
@@ -164,6 +158,7 @@ public partial class MainWindow
             SetStatus($"{files.Count}개를 목록에 추가했습니다");
             return;
         }
+        _diagnostics.Begin(files[0], false);
         SaveResume();
         if (files.Count == 1 && _settings.AutoPlaylist && File.Exists(files[0]) && MediaFiles.FolderPlaylist(files[0]) is { } fp)
             _mpv.LoadList(fp.Files, fp.Index);
@@ -276,7 +271,7 @@ public partial class MainWindow
     private void OpenSettings()
     {
         if (_settingsWindow != null) { _settingsWindow.Activate(); return; }
-        var win = new SettingsWindow(_settings, _bookmarks, () => _mpv?.GetAudioDevices() ?? new List<(string, string)>()) { Owner = this };
+        var win = new SettingsWindow(_settings, _bookmarks, () => _mpv?.GetAudioDevices() ?? new List<(string, string)>(), _diagnostics) { Owner = this };
         win.SettingChanged += name => OnSettingChanged(name);
         win.ToastPreviewRequested += ShowToastPreview;
         win.Closed += (_, _) => { _settingsWindow = null; BookmarkStore.Save(_bookmarks); };

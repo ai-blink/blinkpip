@@ -91,6 +91,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        InitDiagnostics();
         Loaded += MainWindow_Loaded;
         Closing += MainWindow_Closing;
         Closed += MainWindow_Closed;
@@ -142,7 +143,7 @@ public partial class MainWindow : Window
         try
         {
             _mpv = new MpvPlayer(MpvRenderPanel.Handle);
-            _mpv.LogError += msg => Dispatcher.BeginInvoke(() => { if (!_closing) SetStatus(msg); });
+            AttachDiagnostics(_mpv);
             _mpv.KeyAction += a => Dispatcher.BeginInvoke(() =>
             {
                 if (_closing) return;
@@ -160,6 +161,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
+            _diagnostics.Fail("엔진 초기화", ex.Message);
             string hint = ex is DllNotFoundException or BadImageFormatException
                 ? "libmpv-2.dll(64비트)을 실행 파일 폴더에 넣어 주세요.\n\n" : "";
             System.Windows.MessageBox.Show(hint + ex.Message, "libmpv 초기화 실패",
@@ -187,7 +189,9 @@ public partial class MainWindow : Window
         isOtt = false;
         target = raw.Trim().Trim('"').Trim();
         if (target.Length == 0) return false;
-        if (File.Exists(target) || Directory.Exists(target)) return true;
+        if (File.Exists(target) || Directory.Exists(target) || Path.IsPathFullyQualified(target)) return true;
+        if (Uri.TryCreate(target, UriKind.Absolute, out var localUri) && localUri.IsFile)
+        { target = localUri.LocalPath; return true; }
 
         if (!Uri.TryCreate(target, UriKind.Absolute, out var uri) || uri.Scheme == Uri.UriSchemeFile)
         {
@@ -210,6 +214,13 @@ public partial class MainWindow : Window
             var env = await CoreWebView2Environment.CreateAsync(null, dir);
             await DrmWebView.EnsureCoreWebView2Async(env);
             await DrmWebView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(OttViewportScript);
+            _diagnostics.SetEngineVersion(env.BrowserVersionString, web: true);
+            DrmWebView.CoreWebView2.NavigationStarting += (_, e) => _diagnosticNavigation = e.NavigationId;
+            DrmWebView.CoreWebView2.NavigationCompleted += (_, e) =>
+            {
+                if (!_closing && e.NavigationId == _diagnosticNavigation && DrmWebView.Visibility == Visibility.Visible)
+                    _diagnostics.WebNavigation(e.IsSuccess, e.WebErrorStatus.ToString());
+            };
             return true;
         }
         catch (Exception ex)
@@ -223,24 +234,32 @@ public partial class MainWindow : Window
 
     private async Task RouteMediaAsync(string raw)
     {
+        int revision = ++_diagnosticRouteRevision;
         if (!TryNormalize(raw, out string target, out bool isOtt))
         {
-            SetStatus("열 수 없는 입력입니다: 파일 경로 또는 URL 을 확인하세요");
+            _diagnostics.Begin(raw, false);
+            _diagnostics.Fail("엔진 선택", "열 수 없는 입력입니다: 파일 경로 또는 URL 을 확인하세요");
             return;
         }
         SetStatus("");
+        _diagnostics.Begin(target, isOtt);
 
         if (isOtt)
         {
             _mpv?.Stop();
             MpvHost.Visibility = Visibility.Collapsed;
             DrmWebView.Visibility = Visibility.Visible;
-            if (!await EnsureWebViewAsync())
+            bool ready = await EnsureWebViewAsync();
+            if (_closing || revision != _diagnosticRouteRevision) return;
+            if (!ready)
             {
                 DrmWebView.Visibility = Visibility.Collapsed;
                 MpvHost.Visibility = Visibility.Visible;
+                _diagnostics.Fail("엔진 초기화", "WebView2 초기화 실패");
                 return;
             }
+            if (_closing) return;
+            _diagnostics.OpeningWeb();
             DrmWebView.CoreWebView2.Navigate(target);
         }
         else
@@ -248,6 +267,7 @@ public partial class MainWindow : Window
             if (_webInit is { IsCompletedSuccessfully: true, Result: true }) DrmWebView.CoreWebView2.Navigate("about:blank");
             DrmWebView.Visibility = Visibility.Collapsed;
             MpvHost.Visibility = Visibility.Visible;
+            if (_mpv == null) { _diagnostics.Fail("엔진 선택", "libmpv 초기화 상태를 확인하세요"); return; }
             // 로컬 파일·폴더는 같은 폴더의 영상으로 목록을 만든다(설정에서 끌 수 있음). 주소는 그대로 연다.
             if (File.Exists(target)) OpenPaths(new[] { target });
             else if (Directory.Exists(target)) OpenPaths(MediaFiles.FolderFiles(target, true));
@@ -259,7 +279,7 @@ public partial class MainWindow : Window
     private async void RouteMedia(string raw)
     {
         try { await RouteMediaAsync(raw); }
-        catch (Exception ex) { SetStatus("오류: " + ex.Message); }
+        catch (Exception ex) { _diagnostics.Fail("열기", ex.Message); }
     }
 
     // ───────── 창 상태: 위치 도우미 ─────────
