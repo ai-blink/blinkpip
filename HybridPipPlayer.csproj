@@ -11,6 +11,10 @@
     <PlatformTarget>x64</PlatformTarget>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- 앱 버전(설정 창 정보·파일 속성에 나온다). 바꿀 때 CHANGELOG.md 에 기록한다 -->
+    <Version>0.6.0</Version>
+    <!-- 앱 아이콘(실행 파일·작업 표시줄). 원본은 Assets\app-icon-1024.png, ChatGPT 시안 4번(2026-11-13) -->
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <NoWarn>$(NoWarn);WFAC010</NoWarn>
   </PropertyGroup>
 
@@ -25,6 +29,7 @@
   <!-- 재생 줄 아이콘(어두운 테마용 흰 선). 세 색 테마(A/B/C)가 모두 어두운 바탕이라 한 벌만 쓴다 -->
   <ItemGroup>
     <Resource Include="Assets\icons\*.png" />
+    <Resource Include="Assets\app.ico" />
   </ItemGroup>
 
   <!-- libmpv-2.dll, yt-dlp.exe 를 프로젝트 폴더에 두면 출력 폴더로 복사 -->

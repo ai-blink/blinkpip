@@ -1,6 +1,18 @@
 # HybridPipPlayer
 
+**버전 0.6.0** (2026-11-13) · 변경 기록 [CHANGELOG.md](CHANGELOG.md) · 외부 구성 요소 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+
 WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 안에서 두 엔진을 URL로 자동 전환한다.
+
+## 내려받기
+
+[릴리스](../../releases) 에서 `HybridPipPlayer-<버전>-win-x64.zip`을 받아 원하는 폴더에 풀고 `HybridPipPlayer.exe`를 실행한다.
+
+- 윈도우 10/11 64비트. .NET 런타임이 들어 있어 따로 설치하지 않는다(자체 포함 배포).
+- libmpv, yt-dlp, SponsorBlock 스크립트가 함께 들어 있다(라이선스는 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)).
+- 넷플릭스·디즈니+ 등은 WebView2 런타임이 필요하다(윈도우 11에는 기본으로 있다).
+- SponsorBlock(유튜브 광고 구간 건너뛰기)은 `PATH`에 Python이 있어야 동작한다. 없어도 재생은 된다.
+- 코드 서명이 없어 처음 실행할 때 SmartScreen 경고가 뜰 수 있다("추가 정보 → 실행").
 
 | 엔진 | 대상 | 기술 |
 | --- | --- | --- |
@@ -32,6 +44,7 @@ WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 
 | `MediaFiles.cs`, `MediaSession.cs`, `FileAssociation.cs`, `SingleInstance.cs` | 미디어 확장자·폴더 목록·m3u, 윈도우 미디어 컨트롤 연동, 연결 프로그램, 단일 실행 |
 | `ThemeManager.cs`, `Themes/Dark.xaml` | 색 테마(A/B/C)와 어두운 테마 스타일 |
 | `NativeMethods.cs`, `app.manifest` | Win32(핫키, WorkerW/Progman 탐색, 마우스 훅, DWM), PerMonitorV2 DPI 선언 |
+| `Assets/app.ico`, `Assets/app-icon-1024.png` | 앱 아이콘(실행 파일·창·작업 표시줄, 16~256px 9개 크기)과 그 원본(투명 배경 1024px). ChatGPT 웹 시안 4번(유리 창 + 재생)을 정사각형으로 잘라 만들었다 |
 | `Assets/icons/*.png` | 재생 줄 아이콘 15개. **임시로 만든 모양**이다(원본 PNG는 복구하지 못했다). 같은 이름으로 바꿔 넣으면 된다 |
 
 ## 필요한 바이너리 (저장소에 없음)
@@ -51,6 +64,17 @@ dotnet run --project C:\ai\projects\HybridPipPlayer
 ```
 
 대상 프레임워크는 `net8.0-windows10.0.19041.0`다(`MediaSession.cs`가 WinRT API를 쓴다). 실행 중인 앱이 `bin\`의 exe를 잡고 있으면 빌드가 실패하니 먼저 종료한다.
+
+### 버전 올리기와 릴리스
+
+1. `HybridPipPlayer.csproj`의 `<Version>`을 올리고, `CHANGELOG.md` 맨 위에 그 버전의 추가·바뀜·고침을 적는다(README 첫 줄의 버전도 같이).
+2. 커밋한 뒤 태그를 단다: `git tag -a v<버전> -m "<버전>"`.
+3. 자체 포함 배포본을 만든다(필요한 바이너리 3종이 루트에 있어야 함께 들어간다):
+   ```powershell
+   dotnet publish C:\ai\projects\HybridPipPlayer\HybridPipPlayer.csproj -c Release -r win-x64 --self-contained true -o <출력 폴더>\HybridPipPlayer
+   ```
+   출력 폴더에 `README.md`, `CHANGELOG.md`, `THIRD_PARTY_NOTICES.md`를 넣고 `HybridPipPlayer-<버전>-win-x64.zip`으로 묶는다.
+4. 푸시 후 `gh release create v<버전> <zip> --title "HybridPipPlayer <버전>" --notes-file <해당 버전 패치 노트>`.
 
 ## 재생 줄과 부가 기능
 
