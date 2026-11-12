@@ -80,6 +80,7 @@ public partial class MainWindow
         if (_mpv == null) return;
         _mpv.SetLangs(_settings.SubLangs, _settings.AudioLangs);
         _mpv.SetSubFontSize(_settings.SubFontSize);
+        ApplySubStyle();
         if (_settings.AudioDevice != "auto") _mpv.SetAudioDevice(_settings.AudioDevice);
         string[] props = { "brightness", "contrast", "saturation", "gamma" };
         for (int i = 0; i < props.Length; i++) _mpv.SetProperty(props[i], _settings.VideoAdjust[i].ToString());
@@ -90,6 +91,13 @@ public partial class MainWindow
             if (_settings.EqBands[i] != 0)
                 parts.Add($"equalizer=f={freq[i]}:width_type=o:width=2:g={_settings.EqBands[i]}");
         _mpv.SetProperty("af", parts.Count == 0 ? "" : "lavfi=[" + string.Join(",", parts) + "]");
+    }
+
+    // mpv 자막 글꼴·색(ASS 자막은 sub-ass-override=scale 이라 자체 스타일을 유지한다)
+    private void ApplySubStyle()
+    {
+        _mpv?.SetProperty("sub-font", _settings.SubFont.Length == 0 ? "sans-serif" : _settings.SubFont);
+        _mpv?.SetProperty("sub-color", _settings.SubColor);
     }
 
     private ImageSource Ico(string name)
@@ -278,6 +286,16 @@ public partial class MainWindow
         _settings.Save();
         // 건너뛰기 간격은 테마·레이아웃·mpv 속성과 무관하다. 전부 다시 적용하면 재생 중 소리가 끊기거나 화면이 깜박인다
         if (name == nameof(AppSettings.SeekSeconds)) { UpdateSeekButtons(); return; }
+        // PIP 자막 줄·자막 글꼴/색도 같은 이유로 해당 부분만 다시 적용한다
+        if (name == nameof(AppSettings.PipSubSize)) { ApplyStripStyle(); return; }
+        if (name == nameof(AppSettings.PipSubBelow)) { ApplyPipSubMode(); return; }
+        if (name is nameof(AppSettings.SubFont) or nameof(AppSettings.SubColor))
+        {
+            ApplySubStyle();
+            ApplyStripStyle();
+            PushOttSubConfig();
+            return;
+        }
         ThemeManager.Apply(_settings.Theme);
         ApplyLayoutSettings();
         ApplyPlayerSettings();

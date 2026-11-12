@@ -22,11 +22,15 @@ public sealed class AppSettings
     // PIP
     public int PipWidth { get; set; } = 480;                   // 320~960 (px 아님, DIP)
     public double PipHideSec { get; set; } = 2.0;              // PIP 에서 커서가 벗어난 뒤 컨트롤·자물쇠가 사라질 때까지(초)
+    public bool PipSubBelow { get; set; } = true;              // PIP 에서 자막을 영상 안 대신 창 아래 자막 줄에 표시
+    public int PipSubSize { get; set; } = 18;                  // PIP 아래 자막 줄 글자 크기(DIP) 10~40
     // 오디오 장치 · 자막
     public string AudioDevice { get; set; } = "auto";          // mpv audio-device 이름
     public string SubLangs { get; set; } = "";                 // 선호 자막 언어(쉼표, 예: ko,kor,en). 비면 mpv 기본
     public string AudioLangs { get; set; } = "";               // 선호 오디오 언어
     public int SubFontSize { get; set; } = 90;                 // mpv sub-font-size (기본 90)
+    public string SubFont { get; set; } = "";                  // 자막 글꼴 이름(비면 기본). mpv·디즈니+·PIP 아래 자막 줄 공통
+    public string SubColor { get; set; } = "#FFFFFF";          // 자막 글자 색 #RRGGBB
     // 스크린샷 알림(토스트)
     public double ToastOpacity { get; set; } = 0.9;            // 0.3~1.0 (1 이면 불투명)
     public double ToastSeconds { get; set; } = 8;              // 떠 있는 시간(초) 2~30
@@ -76,6 +80,10 @@ public sealed class AppSettings
         SubLangs = SanitizeLangs(SubLangs);
         AudioLangs = SanitizeLangs(AudioLangs);
         SubFontSize = Math.Clamp(SubFontSize, 30, 150);
+        PipSubSize = Math.Clamp(PipSubSize, 10, 40);
+        // 글꼴·색은 mpv 옵션과 웹 페이지 CSS 에 그대로 들어가므로 글자·숫자·공백·하이픈만 허용한다
+        SubFont = new string((SubFont ?? "").Where(c => char.IsLetterOrDigit(c) || c == ' ' || c == '-').Take(60).ToArray()).Trim();
+        if (SubColor is not { Length: 7 } || SubColor[0] != '#' || !SubColor.Skip(1).All(char.IsAsciiHexDigit)) SubColor = "#FFFFFF";
         ToastOpacity = Math.Clamp(double.IsFinite(ToastOpacity) ? ToastOpacity : 0.9, 0.3, 1.0);
         ToastSeconds = Math.Clamp(double.IsFinite(ToastSeconds) ? ToastSeconds : 8, 2, 30);
         VideoAdjust = FixArray(VideoAdjust, 4, -100, 100);

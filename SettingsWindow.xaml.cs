@@ -52,6 +52,7 @@ public partial class SettingsWindow : Window
         PipWidthSlider.Value = _s.PipWidth;
         PipHideSlider.Value = _s.PipHideSec;
         SubSizeSlider.Value = _s.SubFontSize;
+        InitSubtitleStyle(); // SettingsWindow.Subtitles.cs
         ToastOpacitySlider.Value = Math.Round(_s.ToastOpacity * 100);
         ToastSecondsSlider.Value = Math.Round(_s.ToastSeconds);
         BookmarksToggle.IsChecked = _s.ShowBookmarks;
@@ -167,6 +168,15 @@ public partial class SettingsWindow : Window
     }
 
     // 재생 줄 팝업에서 간격을 바꿨을 때 슬라이더를 맞춘다
+    /// <summary>PIP 크기를 끌어서 바꾼 너비를 슬라이더에 반영한다</summary>
+    public void SyncPipWidth()
+    {
+        _loading = true;
+        PipWidthSlider.Value = _s.PipWidth;
+        UpdateValueTexts();
+        _loading = false;
+    }
+
     public void SyncSeekSeconds()
     {
         _loading = true;

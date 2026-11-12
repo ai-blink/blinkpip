@@ -64,6 +64,7 @@ public partial class MpvPlayer
 
     public bool SubtitleTimingSupported => Math.Abs((GetDouble("sub-speed") ?? 1) - 1) < .0001 && (GetDouble("sub-fps") ?? 0) == 0;
     public string? PrimarySubtitleId => GetProperty("sid");
+    public string? CurrentSubtitleText => GetProperty("sub-text"); // PIP 아래 자막 줄이 켜질 때 지금 문장을 바로 채운다
     public string? SecondarySubtitleId => GetProperty("secondary-sid");
     public void SetSecondarySubtitle(int? id) => SetProperty("secondary-sid", id?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "no");
     public void ClearAbLoop() { SetProperty("ab-loop-a", "no"); SetProperty("ab-loop-b", "no"); }

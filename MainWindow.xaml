@@ -24,8 +24,7 @@
             <RowDefinition x:Name="ControlBottomRowDef" Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- 상단 드래그 핸들. PIP 에서는 내용만 숨기고 얇은 띠로 남겨 드래그(좌)·복귀(우클릭)에 쓴다
-             (mpv/WebView2 자식 창이 마우스를 가져가므로 영상 위에서는 창을 못 움직인다) -->
+        <!-- 상단 드래그 핸들. PIP 에서는 높이 0 으로 접는다(PipStripHeight) — PIP 이동·복귀는 영상 위 마우스 훅이 맡는다 -->
         <Border x:Name="TopBar" Grid.Row="0" Background="{DynamicResource BarBrush}"
                 MouseLeftButtonDown="TopBar_MouseLeftButtonDown" MouseRightButtonUp="TopBar_MouseRightButtonUp"
                 ToolTip="좌 드래그: 이동 · 우클릭: PIP 전환">

@@ -198,7 +198,7 @@
                             <Grid Style="{StaticResource Row}">
                                 <StackPanel HorizontalAlignment="Left">
                                     <TextBlock Text="PIP 창 너비" Style="{StaticResource RowName}"/>
-                                    <TextBlock Text="다음에 PIP 로 들어갈 때 적용됩니다. 높이는 영상 비율에 맞춥니다." Style="{StaticResource RowHint}" MaxWidth="320"/>
+                                    <TextBlock Text="다음에 PIP 로 들어갈 때 적용됩니다. PIP 가장자리를 끌어 크기를 바꾸면 그 너비가 여기에 저장됩니다. 높이는 영상 비율에 맞춥니다." Style="{StaticResource RowHint}" MaxWidth="320"/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                                     <Slider x:Name="PipWidthSlider" Style="{StaticResource PlayerSlider}" Width="170" Minimum="320" Maximum="960" TickFrequency="20" IsSnapToTickEnabled="True" ValueChanged="PipWidth_ValueChanged"/>
@@ -213,6 +213,23 @@
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                                     <Slider x:Name="PipHideSlider" Style="{StaticResource PlayerSlider}" Width="170" Minimum="0.5" Maximum="10" TickFrequency="0.5" IsSnapToTickEnabled="True" ValueChanged="PipHide_ValueChanged"/>
                                     <TextBlock x:Name="PipHideText" Style="{StaticResource ValueText}"/>
+                                </StackPanel>
+                            </Grid>
+                            <Grid Style="{StaticResource Row}">
+                                <StackPanel HorizontalAlignment="Left">
+                                    <TextBlock Text="자막을 창 아래에 표시" Style="{StaticResource RowName}"/>
+                                    <TextBlock Text="PIP 에서 영상 안 자막을 숨기고 창 바로 아래 줄에 보여 줍니다. 로컬 영상과 디즈니+ 에 적용됩니다." Style="{StaticResource RowHint}" MaxWidth="320"/>
+                                </StackPanel>
+                                <CheckBox x:Name="PipSubBelowToggle" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" Checked="PipSubBelow_Changed" Unchecked="PipSubBelow_Changed"/>
+                            </Grid>
+                            <Grid Style="{StaticResource Row}">
+                                <StackPanel HorizontalAlignment="Left">
+                                    <TextBlock Text="창 아래 자막 크기" Style="{StaticResource RowName}"/>
+                                    <TextBlock Text="PIP 에서 Ctrl+Alt+↑/↓ 로도 바꿀 수 있습니다." Style="{StaticResource RowHint}" MaxWidth="320"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                    <Slider x:Name="PipSubSizeSlider" Style="{StaticResource PlayerSlider}" Width="170" Minimum="10" Maximum="40" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="PipSubSize_ValueChanged"/>
+                                    <TextBlock x:Name="PipSubSizeText" Style="{StaticResource ValueText}"/>
                                 </StackPanel>
                             </Grid>
                         </StackPanel>
@@ -236,6 +253,20 @@
                                     <Slider x:Name="SubSizeSlider" Style="{StaticResource PlayerSlider}" Width="170" Minimum="30" Maximum="150" TickFrequency="5" IsSnapToTickEnabled="True" ValueChanged="SubSize_ValueChanged"/>
                                     <TextBlock x:Name="SubSizeText" Style="{StaticResource ValueText}"/>
                                 </StackPanel>
+                            </Grid>
+                            <Grid Style="{StaticResource Row}">
+                                <StackPanel HorizontalAlignment="Left">
+                                    <TextBlock Text="자막 글꼴" Style="{StaticResource RowName}"/>
+                                    <TextBlock Text="로컬 영상, 디즈니+, PIP 아래 자막 줄에 함께 적용됩니다. 스타일이 들어 있는 자막(ASS)은 원래 모양을 유지합니다." Style="{StaticResource RowHint}" MaxWidth="280"/>
+                                </StackPanel>
+                                <Button x:Name="SubFontPick" HorizontalAlignment="Right" VerticalAlignment="Center" MinWidth="160" MaxWidth="280" Height="28" Click="SubFontPick_Click"/>
+                            </Grid>
+                            <Grid Style="{StaticResource Row}">
+                                <StackPanel HorizontalAlignment="Left">
+                                    <TextBlock Text="자막 색" Style="{StaticResource RowName}"/>
+                                    <TextBlock Text="글자 색입니다. 바로 적용됩니다." Style="{StaticResource RowHint}" MaxWidth="280"/>
+                                </StackPanel>
+                                <Button x:Name="SubColorPick" HorizontalAlignment="Right" VerticalAlignment="Center" MinWidth="160" MaxWidth="280" Height="28" Click="SubColorPick_Click"/>
                             </Grid>
                             <Grid Style="{StaticResource Row}">
                                 <StackPanel HorizontalAlignment="Left">

@@ -24,17 +24,43 @@ public partial class MainWindow : Window
             // 그려지고 글자 크기는 줄마다 인라인 px 로 박혀 있어(플레이어 폭에 비례) 바깥 CSS 가 닿지 않는다.
             // 그래서 shadow root 안에 <style> 을 넣어 창 단위로 scale 한다(하단 중앙 기준이라 위로 자란다).
             // 배율은 localStorage 에 저장되고 호스트의 Ctrl+Alt+↑/↓ 가 값을 바꾼 뒤 __hppApplySub 를 호출한다.
+            // 글꼴·색(__hppSubFont/__hppSubColor)도 호스트가 localStorage 에 넣는다(호스트에서 글자·숫자·공백·#hex 만 허용).
+            // __hppSubBelow 가 켜지면(PIP + '창 아래 자막') 자막을 투명하게 감추고 글자만 호스트로 보낸다.
+            // visibility:hidden 은 innerText 를 비게 만들어서 opacity:0 으로 감춘다.
+            const CUE = '.hive-subtitle-renderer-cue-window';
             const applySub = () => {
                 const root = document.querySelector('timed-text-override-region')?.shadowRoot;
                 if (!root) return;
                 const z = parseFloat(localStorage.getItem('__hppSub2')) || 2.0;
+                const color = localStorage.getItem('__hppSubColor') || '';
+                const font = localStorage.getItem('__hppSubFont') || '';
+                let css = CUE + '{transform:scale(' + z + ')!important;transform-origin:50% 100%!important' + (window.__hppSubBelow ? ';opacity:0!important' : '') + '}';
+                if (/^#[0-9a-fA-F]{6}$/.test(color)) css += CUE + ',' + CUE + ' *{color:' + color + '!important}';
+                if (/^[\p{L}\p{N} -]{1,60}$/u.test(font)) css += CUE + ',' + CUE + ' *{font-family:""' + font + '"",sans-serif!important}';
                 let t = root.getElementById('__hpp_sub_shadow');
                 if (!t) { t = document.createElement('style'); t.id = '__hpp_sub_shadow'; root.appendChild(t); }
-                t.textContent = '.hive-subtitle-renderer-cue-window{transform:scale(' + z + ')!important;transform-origin:50% 100%!important}';
+                if (t.textContent !== css) t.textContent = css;
             };
             window.__hppApplySub = applySub;
+            let lastSub = null;
+            setInterval(() => {
+                if (!window.__hppSubBelow || !window.chrome?.webview) { lastSub = null; return; }
+                const root = document.querySelector('timed-text-override-region')?.shadowRoot;
+                const text = root ? [...root.querySelectorAll(CUE)].map(e => (e.innerText || e.textContent || '').trim()).filter(Boolean).join('\n') : '';
+                if (text !== lastSub) { lastSub = text; window.chrome.webview.postMessage('hppsub:' + text); }
+            }, 200);
+            // 가장 큰 video 의 원본 크기를 호스트에 알린다(PIP 창 높이를 영상 비율에 맞추는 데 쓴다). 바뀔 때만 보낸다.
+            let lastAspect = null;
+            const reportAspect = () => {
+                if (!window.chrome?.webview) return;
+                const v = [...document.querySelectorAll('video')].filter(x => x.videoWidth > 0 && x.videoHeight > 0)
+                    .sort((a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight)[0];
+                const s = v ? v.videoWidth + 'x' + v.videoHeight : '0x0';
+                if (s !== lastAspect) { lastAspect = s; window.chrome.webview.postMessage('hppaspect:' + s); }
+            };
             const apply = () => {
                 applySub();
+                reportAspect();
                 const watching = /\/(watch|play|video)(\/|$)/.test(location.pathname);
                 let s = document.getElementById('__hpp_style');
                 if (watching && !s && document.head) {
@@ -69,7 +95,7 @@ public partial class MainWindow : Window
     private const int SnapPx = 25;           // 모니터 가장자리 자석 스냅 거리(px)
     private const int SnapMarginPx = 12;     // 스냅/PIP 배치 시 남기는 여백(px)
     private const int ControlBarHeight = 38; // DIP
-    private const int PipStripHeight = 16;   // DIP
+    private const int PipStripHeight = 0;    // PIP 상단 띠(DIP). 0 = 영상이 꽉 차게(이동·우클릭 복귀는 마우스 훅이 영상 위에서 처리)
 
     private IntPtr _hwnd;
     private HwndSource? _hwndSource;
@@ -84,7 +110,6 @@ public partial class MainWindow : Window
     private LockOverlay? _lockOverlay;
     private bool _pipLocked, _overlayVisible;
     private DateTime _lastHover;
-    private const double OverlayHideDelaySec = 2.0; // 커서가 PIP 를 벗어난 뒤 자물쇠가 사라질 때까지
     private IntPtr _mouseHook;
     private NativeMethods.LowLevelMouseProc? _mouseProc; // GC 로 수거되지 않게 필드로 유지
 
@@ -98,8 +123,8 @@ public partial class MainWindow : Window
         _tick.Tick += (_, _) => { AutoDodgeTick(); WallpaperPauseTick(); OverlayTick(); };
         PreviewKeyDown += OttKeyBridge;
         PreviewKeyDown += ShortcutKeyBridge;
-        LocationChanged += (_, _) => { if (_overlayVisible) PositionOverlay(); };
-        SizeChanged += (_, _) => { if (_overlayVisible) PositionOverlay(); };
+        LocationChanged += (_, _) => PositionPipExtras();
+        SizeChanged += (_, _) => PositionPipExtras();
     }
 
     // ───────── 시작 ─────────
@@ -163,6 +188,7 @@ public partial class MainWindow : Window
                 MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
+        InitPipExtras(); // PIP 재생 컨트롤·아래 자막 줄 (MainWindow.PipExtras.cs)
         InitializeShortcuts();
         InitPlayback(); // 설정·북마크·재생 줄 (MainWindow.Playback.cs)
 
@@ -211,6 +237,7 @@ public partial class MainWindow : Window
             var env = await CoreWebView2Environment.CreateAsync(null, dir);
             await DrmWebView.EnsureCoreWebView2Async(env);
             await DrmWebView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(OttViewportScript);
+            HookOttMessages(DrmWebView.CoreWebView2);
             _diagnostics.SetEngineVersion(env.BrowserVersionString, web: true);
             DrmWebView.CoreWebView2.NavigationStarting += (_, e) => _diagnosticNavigation = e.NavigationId;
             DrmWebView.CoreWebView2.NavigationCompleted += (_, e) =>
@@ -312,15 +339,16 @@ public partial class MainWindow : Window
         if (on && !_isPipMode) return;
         _pipLocked = on;
         _lockOverlay?.SetLocked(on);
+        if (on) HidePipControls(); // 잠금은 마우스 UI 를 막는다
         NativeMethods.EnumChildWindows(_hwnd, (h, _) => { NativeMethods.EnableWindow(h, !on); return true; }, IntPtr.Zero);
         SetStatus(on ? "PIP 잠금 (Ctrl+Alt+L 또는 자물쇠로 해제)" : "");
     }
 
-    // 커서가 PIP(또는 자물쇠) 위에 있으면 버튼을 보이고, 벗어난 뒤 OverlayHideDelaySec 지나면 숨긴다
+    // 커서가 PIP(또는 자물쇠·PIP 컨트롤) 위에 있으면 자물쇠와 재생 컨트롤을 보이고, 벗어난 뒤 설정의 PipHideSec 지나면 숨긴다
     private void OverlayTick()
     {
         if (_lockOverlay == null) return;
-        if (!_isPipMode || _isClickThrough || _isWallpaperMode || _closing) { HideOverlay(); return; }
+        if (!_isPipMode || _isClickThrough || _isWallpaperMode || _closing) { HideOverlay(); HidePipControls(); return; }
 
         NativeMethods.GetCursorPos(out var pt);
         NativeMethods.GetWindowRect(_hwnd, out var r);
@@ -329,17 +357,21 @@ public partial class MainWindow : Window
         var root = NativeMethods.GetAncestor(NativeMethods.WindowFromPoint(pt), NativeMethods.GA_ROOT);
         bool inPip = pt.X >= r.Left && pt.X < r.Right && pt.Y >= r.Top && pt.Y < r.Bottom && root == _hwnd;
         bool onButton = _overlayVisible && root == _lockOverlay.Hwnd;
-        bool inside = inPip || onButton;
+        bool onControls = _pipControlsVisible && (root == _pipControls?.Hwnd || _pipControls?.IsSeeking == true);
+        bool inside = inPip || onButton || onControls;
 
         if (inside)
         {
             _lastHover = DateTime.UtcNow;
             ShowOverlay();
+            ShowPipControls();
         }
-        else if (_overlayVisible && (DateTime.UtcNow - _lastHover).TotalSeconds >= OverlayHideDelaySec)
+        else if ((DateTime.UtcNow - _lastHover).TotalSeconds >= _settings.PipHideSec)
         {
             HideOverlay();
+            HidePipControls();
         }
+        else UpdatePipControls();
     }
 
     private void ShowOverlay()
@@ -391,14 +423,20 @@ public partial class MainWindow : Window
         _isPipMode = true;
         ControlBarRow.Height = new GridLength(PipStripHeight);
         BarContent.Visibility = Visibility.Collapsed;
+        ControlRow.Visibility = Visibility.Collapsed; // 재생 줄은 접고, 커서가 올라오면 PipControls 를 띄운다
+        Background = System.Windows.Media.Brushes.Black; // 영상이 비율 맞춤 전 잠깐 남기는 틈도 검게
+        RootGrid.Margin = new Thickness(0);              // 테두리 여백 없이 꽉 차게(가장자리 크기 조절은 마우스 훅이 맡는다)
         Topmost = true;
 
         var wa = System.Windows.Forms.Screen.FromHandle(_hwnd).WorkingArea;
         double s = Scale;
-        int w = (int)(480 * s), h = (int)((270 + PipStripHeight) * s);
+        // 설정의 PIP 너비(마지막으로 끌어서 바꾼 크기가 저장된다). 높이는 일단 16:9, 아래 FitToVideoAspect 가 실제 비율로 맞춘다
+        int w = (int)(_settings.PipWidth * s), h = (int)((_settings.PipWidth * 9 / 16.0 + PipStripHeight) * s);
         SetRect(wa.Right - w - SnapMarginPx, wa.Bottom - h - SnapMarginPx, w, h);
         _mpv?.MultiplySubScale(1.5); // 작은 창에서 자막이 묻히지 않게
-        FitToVideoAspect();     // 480 너비는 유지하고 높이를 영상 비율에 맞춘다
+        FitToVideoAspect();     // 너비는 유지하고 높이를 영상 비율에 맞춘다
+        EnsureStripRoom();      // 창 아래 자막 줄이 화면 밖으로 나가지 않게
+        ApplyPipSubMode();
         UpdateTimer();          // 자물쇠 버튼 호버 감지
     }
 
@@ -407,13 +445,19 @@ public partial class MainWindow : Window
         if (_pipLocked) SetLocked(false); // 잠금은 PIP 전용 — 나가기 전에 풀어 자식 창을 다시 활성화한다
         _isPipMode = false;
         HideOverlay();
+        HidePipControls();
         UpdateTimer();
         if (_isClickThrough) SetClickThroughMode(false);
         ControlBarRow.Height = new GridLength(ControlBarHeight);
         BarContent.Visibility = Visibility.Visible;
+        ControlRow.Visibility = Visibility.Visible;
+        SetResourceReference(BackgroundProperty, "BarBrush");
+        RootGrid.Margin = new Thickness(6);
+        _resizeEdge = 0;
         Topmost = false;
         RestoreRect(_pipRestore);
         _mpv?.MultiplySubScale(1.0 / 1.5);
+        ApplyPipSubMode();
     }
 
     // PIP 에서 영상 위 좌클릭 드래그 = 창 이동, 우클릭 = PIP 해제.
@@ -421,8 +465,48 @@ public partial class MainWindow : Window
     // 시스템 이동 루프(WM_NCLBUTTONDOWN)는 mpv 가 클릭 직후 마우스를 캡처해 버려 끊기므로,
     // 훅에서 마우스 이동량을 직접 따라가 SetWindowPos 로 옮긴다(스냅도 여기서 적용).
     private bool _pipDragging;
+    private int _resizeEdge; // PIP 가장자리 크기 조절 중인 변: 1 좌, 2 우, 4 위, 8 아래(모서리는 합)
     private NativeMethods.POINT _dragStart;
     private NativeMethods.RECT _dragRect;
+
+    // PIP 크기를 끌어서 바꾸면 그 너비(DIP)를 설정에 저장해 다음 PIP 도 같은 크기로 연다
+    private void RememberPipWidth()
+    {
+        if (!_isPipMode || _closing || !NativeMethods.GetWindowRect(_hwnd, out var r)) return;
+        int w = Math.Clamp((int)Math.Round((r.Right - r.Left) / Scale), 320, 960);
+        if (w == _settings.PipWidth) return;
+        _settings.PipWidth = w;
+        _settings.Save();
+        _settingsWindow?.SyncPipWidth();
+    }
+
+    // 누른 변의 반대쪽을 고정하고 영상 비율을 지키며 창 크기를 바꾼다. 좌우 변이 끼면 너비 기준, 위아래 변만이면 높이 기준.
+    private void ResizePipFromHook(NativeMethods.POINT pt)
+    {
+        int dx = pt.X - _dragStart.X, dy = pt.Y - _dragStart.Y;
+        int w0 = _dragRect.Right - _dragRect.Left, h0 = _dragRect.Bottom - _dragRect.Top;
+        var (mx, my) = Chrome();
+        double va = TargetVideoAspect;
+        double ratio = va > 0 ? va : (w0 - mx) / Math.Max(1, h0 - my);
+        int minW = (int)(240 * Scale);
+        var wa = System.Windows.Forms.Screen.FromHandle(_hwnd).WorkingArea;
+        int w, h;
+        if ((_resizeEdge & 3) != 0)
+        {
+            w = Math.Clamp(w0 + ((_resizeEdge & 1) != 0 ? -dx : dx), minW, wa.Width);
+            h = (int)Math.Round((w - mx) / ratio + my);
+        }
+        else
+        {
+            h = h0 + ((_resizeEdge & 4) != 0 ? -dy : dy);
+            w = Math.Clamp((int)Math.Round((h - my) * ratio + mx), minW, wa.Width);
+            h = (int)Math.Round((w - mx) / ratio + my);
+        }
+        if (h > wa.Height) { h = wa.Height; w = (int)Math.Round((h - my) * ratio + mx); }
+        int x = (_resizeEdge & 1) != 0 ? _dragRect.Right - w : _dragRect.Left;
+        int y = (_resizeEdge & 4) != 0 ? _dragRect.Bottom - h : _dragRect.Top;
+        SetRect(x, y, w, h);
+    }
 
     private IntPtr MouseHookProc(int nCode, IntPtr wParam, IntPtr lParam)
     {
@@ -438,14 +522,29 @@ public partial class MainWindow : Window
                         NativeMethods.GetWindowRect(_hwnd, out var r))
                     {
                         int edge = (int)(8 * Scale);
+                        _dragStart = pt;
+                        _dragRect = r;
                         if (pt.X > r.Left + edge && pt.X < r.Right - edge && pt.Y > r.Top + edge && pt.Y < r.Bottom - edge)
-                        {
                             _pipDragging = true;
-                            _dragStart = pt;
-                            _dragRect = r;
+                        else
+                        {
+                            // 가장자리 8px: PIP 는 테두리 여백이 없어 자식 창이 가장자리까지 덮으므로 크기 조절도 훅에서 직접 한다.
+                            // 클릭이 영상(사이트 재생/일시정지)으로 넘어가지 않게 이 누름은 삼킨다.
+                            _resizeEdge = (pt.X <= r.Left + edge ? 1 : pt.X >= r.Right - edge ? 2 : 0) |
+                                          (pt.Y <= r.Top + edge ? 4 : pt.Y >= r.Bottom - edge ? 8 : 0);
+                            return (IntPtr)1;
                         }
                     }
                     break;
+
+                case NativeMethods.WM_MOUSEMOVE when _resizeEdge != 0:
+                    ResizePipFromHook(pt);
+                    break;
+
+                case NativeMethods.WM_LBUTTONUP when _resizeEdge != 0:
+                    _resizeEdge = 0;
+                    Dispatcher.BeginInvoke(RememberPipWidth); // 파일 저장은 훅 밖에서
+                    return (IntPtr)1;
 
                 case NativeMethods.WM_MOUSEMOVE when _pipDragging:
                     {
@@ -610,14 +709,16 @@ public partial class MainWindow : Window
 
     // 창 비율을 맞출 영상 비율. mpv 화면이 보이고 비율을 알 때만 유효(0 이면 _aspect 로 대체).
     // 앰비언트가 켜져 있으면 출력 캔버스가 16:9 로 고정이라 16:9 를 쓴다.
+    // 웹뷰는 PIP 에서만 페이지가 알려 준 영상 비율을 쓴다(일반 창은 사이트 목록 화면도 보여 주므로 건드리지 않는다).
     private double TargetVideoAspect =>
-        MpvHost.Visibility == Visibility.Visible ? (_isAmbient ? 16.0 / 9 : _videoAspect) : 0;
+        MpvHost.Visibility == Visibility.Visible ? (_isAmbient ? 16.0 / 9 : _videoAspect)
+        : _isPipMode ? _webVideoAspect : 0;
 
-    // 영상 영역 밖의 창 구성(좌우·상하 6px 여백 + 상단 바)을 px 로. 창 비율 = (영상너비+mx) : (영상높이+my)
+    // 영상 영역 밖의 창 구성(좌우·상하 여백 — 평소 6px, PIP 0 — + 상단 바)을 px 로. 창 비율 = (영상너비+mx) : (영상높이+my)
     private (double mx, double my) Chrome()
     {
-        double s = Scale;
-        return (12 * s, 12 * s + ControlBarRow.Height.Value * s);
+        double s = Scale, m = RootGrid.Margin.Left * 2 * s;
+        return (m, m + ControlBarRow.Height.Value * s);
     }
 
     // 새 영상이 열리거나 앰비언트가 바뀌면 현재 너비를 유지한 채 영상 비율에 맞게 높이를 조정한다
@@ -663,6 +764,14 @@ public partial class MainWindow : Window
     // 현재 보이는 화면에 맞춰 자막 크기를 바꾼다: mpv 는 sub-scale ±0.1, 웹뷰는 zoom ±0.2
     private async void AdjustSubtitle(int dir)
     {
+        if (StripWanted) // PIP 아래 자막 줄이 켜져 있으면 그 글자 크기를 바꾼다(±2)
+        {
+            _settings.PipSubSize += dir * 2;
+            OnSettingChanged(nameof(AppSettings.PipSubSize));
+            SetStatus($"PIP 자막 크기 {_settings.PipSubSize}");
+            _settingsWindow?.SyncPipSubSize();
+            return;
+        }
         if (DrmWebView.Visibility == Visibility.Visible)
         {
             _ottSubScale = Math.Clamp(Math.Round(_ottSubScale + dir * 0.2, 1), 0.8, 4.0);
@@ -741,7 +850,7 @@ public partial class MainWindow : Window
                 else KeepAspect(wParam.ToInt32(), lParam);
                 handled = true;
                 return (IntPtr)1;
-            case NativeMethods.WM_EXITSIZEMOVE: _inMoveLoop = false; break;
+            case NativeMethods.WM_EXITSIZEMOVE: _inMoveLoop = false; RememberPipWidth(); break;
             case NativeMethods.WM_WINDOWPOSCHANGING: SnapWindowPos(lParam); break;
             case NativeMethods.WM_HOTKEY:
                 switch (wParam.ToInt32())
