@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 public sealed record SubtitlePlaybackSample(double Position, bool Paused, SubtitleCue? Cue, double Delay, string? PrimaryId, bool TimingSupported = true, long MediaSerial = 0);
 

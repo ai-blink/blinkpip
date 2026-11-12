@@ -1,4 +1,4 @@
-<Window x:Class="HybridPipPlayer.SettingsWindow"
+<Window x:Class="blinkpip.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="설정" Width="800" Height="560" WindowStyle="None" ResizeMode="NoResize"

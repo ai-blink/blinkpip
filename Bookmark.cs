@@ -8,7 +8,7 @@ using System.Windows.Media;
 using Brush = System.Windows.Media.Brush;
 using Color = System.Windows.Media.Color;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 /// <summary>북마크 줄의 칩 하나. 저장은 이름·주소·표시 글자·색(#RRGGBB)만 한다.</summary>
 public sealed class Bookmark
@@ -78,13 +78,12 @@ public sealed class Bookmark
     }
 }
 
-/// <summary>북마크 저장소: LocalAppData\HybridPipPlayer\bookmarks.json. 파일이 없으면 기본 목록을 쓴다.</summary>
+/// <summary>북마크 저장소: LocalAppData\blinkpip\bookmarks.json. 파일이 없으면 기본 목록을 쓴다.</summary>
 public static class BookmarkStore
 {
     private sealed record Dto(string Name, string Url, string Mark, string Hex);
 
-    private static readonly string PathJson = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HybridPipPlayer", "bookmarks.json");
+    private static readonly string PathJson = AppPaths.DataFile("bookmarks.json");
 
     public static List<Bookmark> Load()
     {

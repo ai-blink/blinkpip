@@ -2,7 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Interop;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 public partial class PipControls : Window
 {

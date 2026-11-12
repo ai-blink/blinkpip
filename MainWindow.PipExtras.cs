@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Windows;
 using Microsoft.Web.WebView2.Core;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 // PIP 전용 부가 창 두 개:
 //  · 재생 컨트롤(PipControls) — PIP 에서는 아래 재생 줄을 접고, 커서가 PIP 위에 있을 때만 영상 아래쪽 안에 띄운다.

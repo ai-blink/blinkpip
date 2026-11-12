@@ -2,7 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 public static class NativeMethods
 {

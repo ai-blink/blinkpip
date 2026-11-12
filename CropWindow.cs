@@ -6,7 +6,7 @@ using Button = System.Windows.Controls.Button;
 using TextBox = System.Windows.Controls.TextBox;
 using ComboBox = System.Windows.Controls.ComboBox;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 public sealed class CropWindow : Window
 {

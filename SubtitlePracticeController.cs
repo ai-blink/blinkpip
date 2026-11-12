@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 public static class SubtitleTime
 {

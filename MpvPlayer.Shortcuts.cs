@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 public partial class MpvPlayer
 {

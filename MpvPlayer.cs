@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 public partial class MpvPlayer : IDisposable
 {
@@ -65,7 +65,7 @@ public partial class MpvPlayer : IDisposable
 
     public MpvPlayer(IntPtr renderHwnd)
     {
-        string dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HybridPipPlayer");
+        string dataDir = AppPaths.DataDir;
         Directory.CreateDirectory(dataDir);
         _logPath = Path.Combine(dataDir, "mpv.log");
 

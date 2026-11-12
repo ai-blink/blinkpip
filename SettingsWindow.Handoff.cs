@@ -1,5 +1,5 @@
 using System.Windows;
-namespace HybridPipPlayer;
+namespace blinkpip;
 public partial class SettingsWindow
 {
     private void RefreshHandoffRegistration()

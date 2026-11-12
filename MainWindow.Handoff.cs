@@ -1,5 +1,5 @@
 using System.Windows;
-namespace HybridPipPlayer;
+namespace blinkpip;
 public partial class MainWindow
 {
     private sealed record PendingHandoff(HandoffRequest Request, int Revision, long EntryId);

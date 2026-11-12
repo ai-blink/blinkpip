@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 public sealed record HandoffRequest(string Url, double? Time = null, string? Subtitle = null, double? Speed = null, bool? Pip = null);
 

@@ -4,16 +4,15 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
-/// <summary>이어 보기 위치 저장소(최대 300개, 최근에 저장한 것이 앞). LocalAppData\HybridPipPlayer\resume.json</summary>
+/// <summary>이어 보기 위치 저장소(최대 300개, 최근에 저장한 것이 앞). LocalAppData\blinkpip\resume.json</summary>
 public static class ResumeStore
 {
     private const int Max = 300;
     private sealed record Entry(string Path, double Pos);
 
-    private static readonly string PathJson = System.IO.Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HybridPipPlayer", "resume.json");
+    private static readonly string PathJson = AppPaths.DataFile("resume.json");
 
     private static List<Entry>? _cache; // 5초마다 저장하므로 읽기는 메모리에서 한다
 

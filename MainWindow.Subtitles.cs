@@ -4,7 +4,7 @@ using WpfContextMenu = System.Windows.Controls.ContextMenu;
 using WpfMenuItem = System.Windows.Controls.MenuItem;
 using WpfSeparator = System.Windows.Controls.Separator;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 public partial class MainWindow
 {

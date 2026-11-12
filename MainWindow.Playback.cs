@@ -17,7 +17,7 @@ using WpfMouseArgs = System.Windows.Input.MouseEventArgs;
 using WpfOpenFileDialog = Microsoft.Win32.OpenFileDialog;
 using WpfSaveFileDialog = Microsoft.Win32.SaveFileDialog;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 // 재생 줄, 열기, 목록, 자막/소리, 전체 화면, 설정 연결. 포맷 후 세션 기록에서 코드가 일부 사라져 다시 작성한 파일이다
 // (원본과 동작이 같다고 보증하지 않는다). 창 모드(PIP/배경화면/클릭 투과)는 MainWindow.xaml.cs 가 맡는다.
@@ -35,7 +35,7 @@ public partial class MainWindow
     private bool _engineA => MpvHost?.Visibility == Visibility.Visible; // XAML 로딩 중에는 아직 null
 
     private static string ShotDir =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "HybridPipPlayer");
+        AppPaths.ShotDir;
 
     // ───────── 시작 ─────────
 

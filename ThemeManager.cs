@@ -5,7 +5,7 @@ using System.Windows;
 using System.Windows.Media;
 using Color = System.Windows.Media.Color;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 /// <summary>색 테마 후보 A/B/C 를 런타임에 바꾼다. Themes/Dark.xaml 의 색 키를 Application.Resources 에서 덮어쓰면
 /// DynamicResource 로 참조하는 모든 브러시·그라데이션이 따라 바뀐다.</summary>

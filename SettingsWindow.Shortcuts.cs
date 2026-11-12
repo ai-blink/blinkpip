@@ -6,7 +6,7 @@ using System.Windows.Media;
 using Button = System.Windows.Controls.Button;
 using TextBox = System.Windows.Controls.TextBox;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 public partial class SettingsWindow
 {

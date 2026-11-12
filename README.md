@@ -17,7 +17,7 @@ WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 
 | 엔진 | 대상 | 기술 |
 | --- | --- | --- |
 | A: libmpv | 로컬 영상, 유튜브 등 | `libmpv-2.dll` + `yt-dlp` + SponsorBlock(Lua) |
-| B: WebView2 | 넷플릭스, 디즈니+ 등 DRM OTT | Edge WebView2, 영구 프로필(`HybridPipPlayer_WebView2`)로 로그인 유지 |
+| B: WebView2 | 넷플릭스, 디즈니+ 등 DRM OTT | Edge WebView2, 영구 프로필(`blinkpip_WebView2`)로 로그인 유지 |
 
 `MainWindow.xaml.cs`의 `WebEngineHosts`(넷플릭스·디즈니+·티빙·Apple TV(`tv.apple.com`)·왓챠·쿠팡플레이·웨이브·라프텔·프라임 비디오, 서브도메인 포함)만 엔진 B로 가고, 나머지 URL·파일 경로는 엔진 A로 간다. 사이트 안 링크 이동은 웹뷰 안에 머문다. 자막 크기·창 아래 자막 줄·PIP 비율 맞춤은 넷플릭스·디즈니+에만 맞춰져 있다.
 
@@ -25,7 +25,7 @@ WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 
 
 ## 파일
 
-저장소 루트가 곧 프로젝트 폴더다(`HybridPipPlayer.csproj`가 루트에 있다).
+저장소 루트가 곧 프로젝트 폴더다(`blinkpip.csproj`가 루트에 있다).
 
 | 파일 | 역할 |
 | --- | --- |
@@ -40,7 +40,7 @@ WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 
 | `PipControls.xaml(.cs)`, `LockOverlay.cs` | PIP 컨트롤 줄, PIP 왼쪽 위 자물쇠 버튼(별도 최상위 창) |
 | `MpvPlayer.Subtitles.cs`, `SubtitlePracticeController.cs`, `SubtitlePracticeSettings.cs`, `SubtitlePracticeWindow.cs`, `MainWindow.Subtitles.cs` | 자막 속성 관찰, 문장 반복 상태, 연습 설정·창·메뉴 연결 |
 | `MpvPlayer.cs` | libmpv P/Invoke 래퍼(옵션, 이벤트 스레드, 로그, 앰비언트 필터, SponsorBlock 설정, 재생 목록·트랙) |
-| `AppSettings.cs`, `Bookmark.cs`, `RecentStore.cs`, `ResumeStore.cs` | 설정, 북마크, 최근 재생, 이어 보기 저장소(`%LocalAppData%\HybridPipPlayer\` 아래 json) |
+| `AppSettings.cs`, `Bookmark.cs`, `RecentStore.cs`, `ResumeStore.cs` | 설정, 북마크, 최근 재생, 이어 보기 저장소(`%LocalAppData%\blinkpip\` 아래 json) |
 | `MediaFiles.cs`, `MediaSession.cs`, `FileAssociation.cs`, `SingleInstance.cs` | 미디어 확장자·폴더 목록·m3u, 윈도우 미디어 컨트롤 연동, 연결 프로그램, 단일 실행 |
 | `ThemeManager.cs`, `Themes/Dark.xaml` | 색 테마(A/B/C)와 어두운 테마 스타일 |
 | `NativeMethods.cs`, `app.manifest` | Win32(핫키, WorkerW/Progman 탐색, 마우스 훅, DWM), PerMonitorV2 DPI 선언 |
@@ -59,19 +59,19 @@ WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 
 ## 빌드·실행
 
 ```powershell
-dotnet build C:\ai\projects\HybridPipPlayer\HybridPipPlayer.csproj
-dotnet run --project C:\ai\projects\HybridPipPlayer
+dotnet build C:\ai\projects\blinkpip\blinkpip.csproj
+dotnet run --project C:\ai\projects\blinkpip
 ```
 
 대상 프레임워크는 `net8.0-windows10.0.19041.0`다(`MediaSession.cs`가 WinRT API를 쓴다). 실행 중인 앱이 `bin\`의 exe를 잡고 있으면 빌드가 실패하니 먼저 종료한다.
 
 ### 버전 올리기와 릴리스
 
-1. `HybridPipPlayer.csproj`의 `<Version>`을 올리고, `CHANGELOG.md` 맨 위에 그 버전의 추가·바뀜·고침을 적는다(README 첫 줄의 버전도 같이).
+1. `blinkpip.csproj`의 `<Version>`을 올리고, `CHANGELOG.md` 맨 위에 그 버전의 추가·바뀜·고침을 적는다(README 첫 줄의 버전도 같이).
 2. 커밋한 뒤 태그를 단다: `git tag -a v<버전> -m "<버전>"`.
 3. 자체 포함 배포본을 만든다(필요한 바이너리 3종이 루트에 있어야 함께 들어간다):
    ```powershell
-   dotnet publish C:\ai\projects\HybridPipPlayer\HybridPipPlayer.csproj -c Release -r win-x64 --self-contained true -o <출력 폴더>\HybridPipPlayer
+   dotnet publish C:\ai\projects\blinkpip\blinkpip.csproj -c Release -r win-x64 --self-contained true -o <출력 폴더>\blinkpip
    ```
    출력 폴더에 `README.md`, `CHANGELOG.md`, `THIRD_PARTY_NOTICES.md`를 넣고 `blinkpip-<버전>-win-x64.zip`으로 묶는다.
 4. 푸시 후 `gh release create v<버전> <zip> --title "blinkpip <버전>" --notes-file <해당 버전 패치 노트>`.
@@ -82,19 +82,19 @@ dotnet run --project C:\ai\projects\HybridPipPlayer
 
 - **열기**: 파일, 폴더, 폴더(하위 포함), 주소, 최근 재생. 파일 하나를 열면 같은 폴더의 영상으로 재생 목록을 만든다(설정에서 끌 수 있음). 끌어다 놓기와 `.m3u`/`.m3u8`도 받는다.
 - **재생 목록 패널**: 재생 줄의 목록 버튼(또는 리모컨의 "재생 목록")을 누르면 오른쪽에서 300px 패널이 밀려 나온다. 영상 HWND 위에는 WPF 요소를 겹칠 수 없어서 영상 영역을 옆으로 밀어내는 방식이다. 더블클릭·Enter로 재생, ✕·Delete로 빼기, 반복·섞기, 파일·폴더 추가, 저장, 비우기. PIP·전체 화면에 들어가면 자동으로 닫힌다.
-- **캡처 버튼과 스크린샷 토스트**: 재생 줄의 카메라 버튼은 mpv 화면이면 원본 해상도로, 웹뷰 화면이면 웹뷰 화면을 PNG로 `내 사진\HybridPipPlayer\`에 저장한다(웹뷰의 DRM 구간은 검게 찍힐 수 있음). 저장하면 플레이어 창 오른쪽 아래에 토스트가 뜨고 썸네일, 파일 이름, "폴더 열기"(저장한 파일을 선택한 채로 탐색기)가 있다. 표시 시간(기본 8초)과 투명도(기본 90%)는 설정의 "모양"에서 바꾸고 "알림 미리 보기"로 확인한다. 마우스를 올려 두면 사라지지 않는다. 토스트를 화면 구석이 아니라 플레이어 창 안에 띄우는 이유는, 접근성 도구 같은 다른 프로그램의 패널이 더 높은 층으로 구석을 가리는 일이 있기 때문이다.
+- **캡처 버튼과 스크린샷 토스트**: 재생 줄의 카메라 버튼은 mpv 화면이면 원본 해상도로, 웹뷰 화면이면 웹뷰 화면을 PNG로 `내 사진\blinkpip\`에 저장한다(웹뷰의 DRM 구간은 검게 찍힐 수 있음). 저장하면 플레이어 창 오른쪽 아래에 토스트가 뜨고 썸네일, 파일 이름, "폴더 열기"(저장한 파일을 선택한 채로 탐색기)가 있다. 표시 시간(기본 8초)과 투명도(기본 90%)는 설정의 "모양"에서 바꾸고 "알림 미리 보기"로 확인한다. 마우스를 올려 두면 사라지지 않는다. 토스트를 화면 구석이 아니라 플레이어 창 안에 띄우는 이유는, 접근성 도구 같은 다른 프로그램의 패널이 더 높은 층으로 구석을 가리는 일이 있기 때문이다.
 - **리모컨**: 자주 쓰는 기능 6칸(즐겨찾기)과 재생 줄에 올릴 기능을 고른다. 기능 목록은 `FeatureCatalog.cs`.
 - **설정**: 재생(컨트롤 위치, 기본 볼륨·속도, 전체 화면 컨트롤 숨김, 이어 보기, 자동 목록), 모양(테마, 북마크 줄, 알림), PIP(너비, 컨트롤 숨김 시간), 오디오·자막(장치, 글자 크기, 선호 언어), 화면·소리 조절(밝기·대비·채도·감마, 5밴드 이퀄라이저), 북마크·정보.
 
 ## 화면 자르기
 
-엔진 A 영상 재생 중 더보기 → **영역 · 화면 자르기** 또는 리모컨의 **영역**에서 1~4배 확대와 보는 위치를 조절한다. 전체·중앙 2배·오른쪽 위 버튼과 이름별 저장/불러오기/삭제를 지원한다. `%LOCALAPPDATA%\HybridPipPlayer\crops.json`에 해상도와 무관한 비율로 최대 50개를 저장한다. OTT에서는 사용할 수 없다.
+엔진 A 영상 재생 중 더보기 → **영역 · 화면 자르기** 또는 리모컨의 **영역**에서 1~4배 확대와 보는 위치를 조절한다. 전체·중앙 2배·오른쪽 위 버튼과 이름별 저장/불러오기/삭제를 지원한다. `%LOCALAPPDATA%\blinkpip\crops.json`에 해상도와 무관한 비율로 최대 50개를 저장한다. OTT에서는 사용할 수 없다.
 
 ## 자막 연습
 
 엔진 A의 자막 메뉴 → **자막 연습** 또는 리모컨의 **자막 연습**에서 텍스트 자막으로 연습한다. 문장 끝 자동 정지, 첫 재생을 포함한 1~5회 반복 후 정지, 현재/선택 문장 다시 듣기를 지원한다. 목록은 클릭으로 선택하고 Enter·두 번 클릭·다시 듣기 버튼으로 이동한다. 두 번째 자막은 기존 자막 트랙을 함께 표시하며 번역을 생성하지 않는다.
 
-자막 지연과 재생 속도를 반영하고, 일반 A–B 반복과 동시에 켜지지 않는다. 파일·기본 자막 트랙·수동 탐색이 바뀌면 이전 문장 반복을 취소한다. 모드와 횟수는 `%LOCALAPPDATA%\HybridPipPlayer\subtitle-practice.json`에 저장한다. 목록은 메모리에 읽힌 자막 범위이며 웹 영상은 일부만 표시될 수 있다. 이미지 자막·끝 시각을 알 수 없는 문장·OTT 자막은 연습 대상에서 제외한다. 자막 자체의 속도/프레임 변환(`sub-speed`, `sub-fps`)을 별도로 변경한 경우 시간 제어를 끄고 안내한다. OTT 보호 영상 시작 감지·자막 읽기는 **확인 필요**다.
+자막 지연과 재생 속도를 반영하고, 일반 A–B 반복과 동시에 켜지지 않는다. 파일·기본 자막 트랙·수동 탐색이 바뀌면 이전 문장 반복을 취소한다. 모드와 횟수는 `%LOCALAPPDATA%\blinkpip\subtitle-practice.json`에 저장한다. 목록은 메모리에 읽힌 자막 범위이며 웹 영상은 일부만 표시될 수 있다. 이미지 자막·끝 시각을 알 수 없는 문장·OTT 자막은 연습 대상에서 제외한다. 자막 자체의 속도/프레임 변환(`sub-speed`, `sub-fps`)을 별도로 변경한 경우 시간 제어를 끄고 안내한다. OTT 보호 영상 시작 감지·자막 읽기는 **확인 필요**다.
 
 ## 확장에서 앱으로 보내기
 
@@ -119,7 +119,7 @@ dotnet run --project C:\ai\projects\HybridPipPlayer
 
 **기본 재생 키**(창에 포커스가 있을 때. `ShortcutCatalog`의 같은 표를 영상 창의 mpv 바인딩과 WPF의 `ShortcutKeyBridge`가 참조한다. 주소창·목록·콤보에 포커스가 있으면 가로채지 않음)
 
-설정 → 북마크·정보 → 단축키에서 기능을 검색하고 키를 바꿀 수 있다. 편집 칸에 `Ctrl+K`처럼 입력하거나, 칸을 선택한 뒤 **키 입력** 버튼을 눌러 실제 키를 누른다. **저장**으로 적용하며 키 입력 중 Esc는 취소다. 별칭은 `F11 | F`처럼 `|`로 구분하고 빈 칸은 해당 기능 해제다. 겹치는 키와 예약된 전역 키는 거절한다. 행별 **복원** 또는 **단축키 모두 기본값으로**를 지원한다. `%LOCALAPPDATA%\HybridPipPlayer\shortcuts.json`에는 기본값과 다른 기능만 저장한다. 전역 단축키 7개와 OTT 사이트 키는 편집 범위 밖이다. 설정 열기·자막 크기 두 기능은 기존처럼 영상 창 포커스에서만 동작한다.
+설정 → 북마크·정보 → 단축키에서 기능을 검색하고 키를 바꿀 수 있다. 편집 칸에 `Ctrl+K`처럼 입력하거나, 칸을 선택한 뒤 **키 입력** 버튼을 눌러 실제 키를 누른다. **저장**으로 적용하며 키 입력 중 Esc는 취소다. 별칭은 `F11 | F`처럼 `|`로 구분하고 빈 칸은 해당 기능 해제다. 겹치는 키와 예약된 전역 키는 거절한다. 행별 **복원** 또는 **단축키 모두 기본값으로**를 지원한다. `%LOCALAPPDATA%\blinkpip\shortcuts.json`에는 기본값과 다른 기능만 저장한다. 전역 단축키 7개와 OTT 사이트 키는 편집 범위 밖이다. 설정 열기·자막 크기 두 기능은 기존처럼 영상 창 포커스에서만 동작한다.
 
 | 키 | 동작 |
 | --- | --- |
@@ -157,9 +157,9 @@ mpv 화면에서는 `Ctrl+↑/↓`(영상 창 포커스)로도 자막 크기를 
 
 ## 데이터 위치
 
-`%LocalAppData%\HybridPipPlayer\` — `mpv.log`(경고 이상 로그), `mpvcfg\`(SponsorBlock 설정·스크립트 사본), `settings.json`(설정), `bookmarks.json`, 최근 재생·이어 보기 기록.
-`내 사진\HybridPipPlayer\` — 스크린샷 저장 폴더(OneDrive로 리디렉션된 PC에서는 OneDrive 사진 폴더 아래).
-`%LocalAppData%\HybridPipPlayer_WebView2\` — WebView2 프로필(로그인 유지).
+`%LocalAppData%\blinkpip\` — `mpv.log`(경고 이상 로그), `mpvcfg\`(SponsorBlock 설정·스크립트 사본), `settings.json`(설정), `bookmarks.json`, 최근 재생·이어 보기 기록.
+`내 사진\blinkpip\` — 스크린샷 저장 폴더(OneDrive로 리디렉션된 PC에서는 OneDrive 사진 폴더 아래).
+`%LocalAppData%\blinkpip_WebView2\` — WebView2 프로필(로그인 유지).
 
 ## 설계 결정과 실측 기록
 
@@ -234,7 +234,7 @@ mpv 화면에서는 `Ctrl+↑/↓`(영상 창 포커스)로도 자막 크기를 
 
 ```powershell
 $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS='--remote-debugging-port=9223 --remote-debugging-address=127.0.0.1'
-Start-Process C:\ai\projects\HybridPipPlayer\bin\Debug\net8.0-windows\blinkpip.exe
+Start-Process C:\ai\projects\blinkpip\bin\Debug\net8.0-windows\blinkpip.exe
 # 웹뷰는 OTT 버튼을 처음 누를 때 초기화되므로 그 뒤에 http://127.0.0.1:9223/json 으로 접속된다
 ```
 

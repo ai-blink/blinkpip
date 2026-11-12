@@ -1,14 +1,14 @@
 using System.IO;
 using System.Text.Json;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 public sealed class SubtitlePracticeSettings
 {
     public bool AutoPause { get; set; }
     public bool Repeat { get; set; }
     public int Passes { get; set; } = 2;
-    private static string FilePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HybridPipPlayer", "subtitle-practice.json");
+    private static string FilePath => AppPaths.DataFile("subtitle-practice.json");
     public static SubtitlePracticeSettings Load()
     {
         try

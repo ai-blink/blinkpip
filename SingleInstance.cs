@@ -1,14 +1,14 @@
 using System.IO;
 using System.IO.Pipes;
 using System.Text;
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 /// <summary>Bounded, current-user IPC; ordinary file opens and validated protocol requests share the receiver.</summary>
 public sealed class SingleInstance : IDisposable
 {
     private static readonly string Suffix = Environment.UserName.Replace('\\', '_');
-    private static readonly string MutexName = "HybridPipPlayer.Single." + Suffix;
-    private static readonly string PipeName = "HybridPipPlayer.Pipe." + Suffix;
+    private static readonly string MutexName = "blinkpip.Single." + Suffix;
+    private static readonly string PipeName = "blinkpip.Pipe." + Suffix;
     private static readonly UTF8Encoding StrictUtf8 = new(false, true);
     private readonly CancellationTokenSource _stop = new();
     private Mutex? _mutex;

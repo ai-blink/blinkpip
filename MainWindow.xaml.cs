@@ -10,7 +10,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using Microsoft.Web.WebView2.Core;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 public partial class MainWindow : Window
 {
@@ -241,7 +241,7 @@ public partial class MainWindow : Window
         try
         {
             // 영구 프로필로 OTT 로그인 유지. HWND 는 Visible 상태여야 만들어지므로 호출 전에 보이게 해 둔다.
-            string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HybridPipPlayer_WebView2");
+            string dir = AppPaths.WebViewDir;
             var env = await CoreWebView2Environment.CreateAsync(null, dir);
             await DrmWebView.EnsureCoreWebView2Async(env);
             await DrmWebView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(OttViewportScript);
@@ -808,7 +808,7 @@ public partial class MainWindow : Window
         if (_mpv == null) return;
         bool want = !_isAmbient;
         if (_mpv.SetAmbient(want)) _isAmbient = want;
-        else { _isAmbient = false; _mpv.SetAmbient(false); SetStatus("앰비언트 필터를 적용하지 못했습니다 (로그: LocalAppData\\HybridPipPlayer\\mpv.log)"); }
+        else { _isAmbient = false; _mpv.SetAmbient(false); SetStatus("앰비언트 필터를 적용하지 못했습니다 (로그: LocalAppData\\blinkpip\\mpv.log)"); }
         FitToVideoAspect(); // 앰비언트는 16:9 캔버스, 끄면 원래 영상 비율
     }
 

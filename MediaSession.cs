@@ -1,7 +1,7 @@
 using System;
 using Windows.Media;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 /// <summary>
 /// Windows 미디어 세션(SMTC) 연결: 키보드의 미디어 키(재생/일시정지·다음·이전·정지)와 볼륨 플라이아웃의 미디어 컨트롤이

@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Windows;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 public partial class App : System.Windows.Application
 {
@@ -20,6 +20,7 @@ public partial class App : System.Windows.Application
             Shutdown(); // 이미 떠 있는 창이 받았다
             return;
         }
+        AppPaths.MigrateLegacy(); // 예전 이름(HybridPipPlayer) 저장 폴더를 blinkpip 으로 옮긴다 — 창(설정 읽기)보다 먼저
         base.OnStartup(e);
     }
 

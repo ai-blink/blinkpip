@@ -3,7 +3,7 @@ using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 /// <summary>Thread-safe, bounded, privacy-filtered playback diagnostics. Never stores raw URLs or logs.</summary>
 public sealed class DiagInfo : IDisposable
@@ -132,7 +132,7 @@ public sealed class DiagInfo : IDisposable
             text.AppendLine($"libmpv: {_mpvVersion}\nyt-dlp: {_ytdlpVersion}\nWebView2: {_webVersion}");
             text.AppendLine("흐름: 엔진 선택 → 주소 풀기(웹 주소) → 열기 → 재생 시작");
             text.AppendLine("OTT 보호 영상 시작 감지·자막 읽기: 확인 필요");
-            text.AppendLine("설정: %LOCALAPPDATA%\\HybridPipPlayer\\settings.json");
+            text.AppendLine("설정: %LOCALAPPDATA%\\blinkpip\\settings.json");
             if (_messages.Count > 0) text.AppendLine("최근 경고 / 오류:\n" + string.Join("\n", _messages));
             return text.ToString().TrimEnd();
         }

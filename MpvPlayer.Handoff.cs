@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Runtime.InteropServices;
-namespace HybridPipPlayer;
+namespace blinkpip;
 public partial class MpvPlayer
 {
     private readonly object _handoffSubtitleLock = new();

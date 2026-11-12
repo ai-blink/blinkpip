@@ -8,7 +8,7 @@ using ListBox = System.Windows.Controls.ListBox;
 using Brush = System.Windows.Media.Brush;
 using Brushes = System.Windows.Media.Brushes;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 /// <summary>Engine A only. Subtitle tracks are selected, not translated by an online service.</summary>
 public sealed class SubtitlePracticeWindow : Window

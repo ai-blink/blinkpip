@@ -1,4 +1,4 @@
-namespace HybridPipPlayer;
+namespace blinkpip;
 public partial class App
 {
     public static string? StartupError { get; private set; }

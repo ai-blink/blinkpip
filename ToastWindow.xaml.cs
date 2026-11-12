@@ -6,7 +6,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 /// <summary>
 /// 화면 모서리에 잠깐 떠 있는 알림. 제목, 한 줄 설명, 썸네일(선택), 버튼 하나를 가진다.

@@ -9,7 +9,7 @@ using RadioButton = System.Windows.Controls.RadioButton;
 using Button = System.Windows.Controls.Button;
 using TextBox = System.Windows.Controls.TextBox;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 /// <summary>왼쪽 사이드바 + 오른쪽 내용 형식의 설정 창. 값을 바꾸면 바로 저장하고 SettingChanged 로 알린다(적용은 MainWindow 가 한다).</summary>
 public partial class SettingsWindow : Window
@@ -69,7 +69,7 @@ public partial class SettingsWindow : Window
         BookmarkList.ItemsSource = _bookmarks;
 
         var v = typeof(SettingsWindow).Assembly.GetName().Version;
-        InfoText.Text = $"버전 {v?.ToString(3) ?? "?"} · 설정 파일: %LOCALAPPDATA%\\HybridPipPlayer\\settings.json";
+        InfoText.Text = $"버전 {v?.ToString(3) ?? "?"} · 설정 파일: %LOCALAPPDATA%\\blinkpip\\settings.json";
         InitDiagnostics(diagnostics);
         RefreshHandoffRegistration();
         _loading = false;

@@ -3,7 +3,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Media;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 // 설정 창의 자막 모양(글꼴·색)과 PIP 아래 자막 줄 항목
 public partial class SettingsWindow

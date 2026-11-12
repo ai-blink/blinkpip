@@ -1,13 +1,15 @@
 # 변경 기록
 
-버전은 `HybridPipPlayer.csproj`의 `<Version>`이 정본이다(설정 → 북마크·정보에 표시). 크롬 확장 버전은 `extension/manifest.json`에 따로 있다.
+버전은 `blinkpip.csproj`의 `<Version>`이 정본이다(설정 → 북마크·정보에 표시). 크롬 확장 버전은 `extension/manifest.json`에 따로 있다.
 형식: 버전마다 날짜와 **추가 · 바뀜 · 고침** 묶음. 새 버전을 낼 때 맨 위에 적고 git 태그 `v<버전>`을 단다.
 
 ## 미출시
 
 ### 바뀜
 - **프로그램 이름을 blinkpip으로 바꿈**: 실행 파일 `blinkpip.exe`, 창·알림·설정·연결 프로그램 이름, 크롬 확장 이름. GitHub 저장소도 `ai-blink/blinkpip`(예전 주소는 GitHub가 넘겨 준다).
-- 설정·로그인 저장 폴더(`%LOCALAPPDATA%\HybridPipPlayer`, `HybridPipPlayer_WebView2`), 스크린샷 폴더, 확장 연결 주소(`hybridpip://`)는 그대로다. 기존 설정·OTT 로그인이 유지된다.
+- 코드 안 이름(네임스페이스)과 프로젝트 파일(`blinkpip.csproj`), 프로젝트 폴더(`C:\ai\projects\blinkpip`)도 바꿈.
+- **저장 폴더도 blinkpip으로**: `%LOCALAPPDATA%\blinkpip`, `%LOCALAPPDATA%\blinkpip_WebView2`, `내 사진\blinkpip`. 처음 켤 때 예전 `HybridPipPlayer` 폴더를 옮겨 와 설정·북마크·OTT 로그인이 그대로 유지된다(옮기지 못하면 예전 폴더를 계속 쓴다). 2026-11-13 실측: 옮긴 뒤 디즈니+ 로그인 유지.
+- 확장 연결 주소 `hybridpip://`만 그대로다(설치된 확장과의 약속).
 - 연결 프로그램·확장 연결을 예전 `HybridPipPlayer.exe`로 등록해 두었다면 새 실행 파일에서 다시 등록한다.
 
 ## 0.6.0 — 2026-11-13

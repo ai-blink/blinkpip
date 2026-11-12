@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 /// <summary>미디어·자막 파일 판별과 폴더 재생 목록 만들기</summary>
 public static class MediaFiles

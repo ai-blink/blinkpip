@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 public partial class MpvPlayer
 {

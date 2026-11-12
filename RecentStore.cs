@@ -4,14 +4,13 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
-/// <summary>최근 재생한 파일·주소 목록(최대 15개, 최신이 앞). LocalAppData\HybridPipPlayer\recent.json 에 저장.</summary>
+/// <summary>최근 재생한 파일·주소 목록(최대 15개, 최신이 앞). LocalAppData\blinkpip\recent.json 에 저장.</summary>
 public static class RecentStore
 {
     private const int Max = 15;
-    private static readonly string PathJson = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HybridPipPlayer", "recent.json");
+    private static readonly string PathJson = AppPaths.DataFile("recent.json");
 
     public static List<string> Load()
     {

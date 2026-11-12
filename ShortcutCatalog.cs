@@ -1,6 +1,6 @@
 using System.Windows.Input;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 public sealed record ShortcutFeature(string Id, string Name, bool Repeat, bool NativeOnly, params string[] DefaultKeys);
 

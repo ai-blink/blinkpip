@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 public partial class MainWindow
 {

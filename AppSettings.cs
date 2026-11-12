@@ -3,9 +3,9 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
-/// <summary>설정. LocalAppData\HybridPipPlayer\settings.json 에 저장하고, 없거나 깨졌으면 기본값으로 시작한다.</summary>
+/// <summary>설정. LocalAppData\blinkpip\settings.json 에 저장하고, 없거나 깨졌으면 기본값으로 시작한다.</summary>
 public sealed class AppSettings
 {
     // 재생
@@ -41,8 +41,7 @@ public sealed class AppSettings
     public string[] RemoteFavorites { get; set; } = FeatureCatalog.DefaultFavorites.ToArray(); // 리모컨 즐겨찾기 칸(id, 빈 문자열은 빈 칸)
     public string[] MainExtras { get; set; } = Array.Empty<string>();                         // 재생 줄에 올려 둔 기능 id
 
-    private static readonly string PathJson = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HybridPipPlayer", "settings.json");
+    private static readonly string PathJson = AppPaths.DataFile("settings.json");
 
     public static AppSettings Load()
     {

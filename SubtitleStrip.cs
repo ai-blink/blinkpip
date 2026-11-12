@@ -9,7 +9,7 @@ using Color = System.Windows.Media.Color;
 using ColorConverter = System.Windows.Media.ColorConverter;
 using FontFamily = System.Windows.Media.FontFamily;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 /// <summary>
 /// PIP 창 바로 아래(공간이 없으면 위)에 자막을 보여 주는 줄. 영상은 자식 HWND 라 WPF 를 겹칠 수 없어(Airspace)

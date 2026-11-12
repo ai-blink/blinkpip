@@ -1,4 +1,4 @@
-# HybridPipPlayer
+# blinkpip
 
 WPF(.NET 8) 하이브리드 플레이어(libmpv + WebView2) + 크롬 MV3 확장(`extension/`). 구조·파일 역할은 `README.md`, 확장은 `extension/README.md`.
 

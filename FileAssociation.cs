@@ -3,7 +3,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 /// <summary>
 /// 탐색기의 "연결 프로그램"(다른 앱 선택) 목록에 이 앱을 등록·해제한다. 현재 사용자(HKCU)만 건드리고 기본 앱은 바꾸지 않는다

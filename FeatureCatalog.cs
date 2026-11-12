@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 /// <summary>리모컨에 올릴 수 있는 기능 목록. 실행은 MainWindow.Remote.cs 의 RunFeature 가 id 로 기존 핸들러에 잇는다.
 /// Glyph 는 Segoe MDL2 문자, Icon 은 Assets/icons 그림 이름(있으면 그림을 우선 쓴다).</summary>

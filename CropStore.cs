@@ -2,7 +2,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 /// <summary>Zoom is a multiplier; pan is a fraction of the scaled video, never pixels.</summary>
 public sealed record CropValues(double Zoom = 1, double PanX = 0, double PanY = 0)
@@ -53,8 +53,7 @@ public sealed class CropStore
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or JsonException)
         { _presets.Clear(); LoadWarning = "저장된 영역을 읽지 못했습니다: " + ex.Message; }
     }
-    public static CropStore LoadDefault() => new(Path.Combine(Environment.GetFolderPath(
-        Environment.SpecialFolder.LocalApplicationData), "HybridPipPlayer", "crops.json"));
+    public static CropStore LoadDefault() => new(AppPaths.DataFile("crops.json"));
 
     private static bool ValidName(string? name) => !string.IsNullOrWhiteSpace(name)
         && name.Trim().Length <= 50 && !name.Any(char.IsControl);

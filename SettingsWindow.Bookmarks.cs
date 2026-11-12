@@ -3,7 +3,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 // 설정 창의 북마크(상단 사이트 줄) 편집: 이름·주소 추가와 수정, 기본 사이트 다시 넣기.
 // 순서 바꾸기·삭제는 SettingsWindow.xaml.cs 에 있다. 바뀐 목록은 메인 창과 같은 컬렉션이라 바로 반영된다.

@@ -1,6 +1,6 @@
 using System.IO;
 using Microsoft.Win32;
-namespace HybridPipPlayer;
+namespace blinkpip;
 public static partial class FileAssociation
 {
     private const string ProtocolKey = @"Software\Classes\hybridpip";
@@ -20,11 +20,11 @@ public static partial class FileAssociation
     {
         string command = ProtocolCommand();
         using (var existing = Registry.CurrentUser.OpenSubKey(ProtocolKey))
-            if (existing != null && existing.GetValue("HybridPipPlayer.Owner") as string != "HybridPipPlayer")
+            if (existing != null && existing.GetValue("blinkpip.Owner") as string != "blinkpip")
                 throw new InvalidOperationException("이 주소가 다른 프로그램에 등록되어 있습니다. 기존 등록을 확인하세요.");
         using (var key = Registry.CurrentUser.CreateSubKey(ProtocolKey))
         {
-            key.SetValue("", "URL:blinkpip"); key.SetValue("URL Protocol", ""); key.SetValue("HybridPipPlayer.Owner", "HybridPipPlayer");
+            key.SetValue("", "URL:blinkpip"); key.SetValue("URL Protocol", ""); key.SetValue("blinkpip.Owner", "blinkpip");
             using var open = key.CreateSubKey(@"shell\open\command"); open.SetValue("", command);
         }
         SHChangeNotify(SHCNE_ASSOCCHANGED, 0, IntPtr.Zero, IntPtr.Zero);

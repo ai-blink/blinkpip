@@ -2,7 +2,7 @@ using System;
 using System.Windows;
 using Microsoft.Web.WebView2.Core;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 // 웹 화면(엔진 B) 기본 브라우징: 뒤로·앞으로·새로 고침 버튼, 주소창을 지금 페이지 주소로 맞추기,
 // 북마크 줄의 "편집" 칩. 버튼은 웹뷰가 보일 때만 켜진다(mpv 재생 중에는 꺼짐).

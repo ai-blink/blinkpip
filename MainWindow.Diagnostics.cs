@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Windows.Threading;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 public partial class MainWindow
 {

@@ -10,7 +10,7 @@ using WpfPanel = System.Windows.Controls.StackPanel;
 using Brush = System.Windows.Media.Brush;
 using FontFamily = System.Windows.Media.FontFamily;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 /// <summary>4×3 리모컨 창. 기본 5칸(이전·재생·다음·음소거·전체 화면) + 즐겨찾기 6칸 + 편집 1칸.
 /// 편집을 누르면 같은 창이 편집 화면(칸 고르기 → 상위 카드 → 하위 카드)으로 바뀐다.

@@ -3,7 +3,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Threading;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 // 리모컨(4×3 창)과 기능 id → 기존 핸들러 연결. 기존 메뉴·단축키는 그대로 두고 같은 동작을 부른다.
 public partial class MainWindow
@@ -99,7 +99,7 @@ public partial class MainWindow
         // 열린 영상이 있어야 하는 기능은 영상이 없을 때 mpv 오류 대신 안내만 한다
         if (id is "shot" or "fstep" or "fback" or "abloop" or "sfile" && string.IsNullOrEmpty(_mpv?.GetPath()))
         { SetStatus($"{f.Name}: 재생 중인 영상이 없습니다"); return; }
-        string shotDir =Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "HybridPipPlayer");
+        string shotDir =AppPaths.ShotDir;
         switch (id)
         {
             case "open": OpenFilesDialog(false); break;

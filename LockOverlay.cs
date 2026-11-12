@@ -10,7 +10,7 @@ using Color = System.Windows.Media.Color;
 using Cursors = System.Windows.Input.Cursors;
 using FontFamily = System.Windows.Media.FontFamily;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 /// <summary>
 /// PIP 왼쪽 위에 뜨는 작은 자물쇠 버튼. mpv/WebView2 는 자식 HWND 라 그 위에 WPF 요소를 겹칠 수 없으므로(Airspace)

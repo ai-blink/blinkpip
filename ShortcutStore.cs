@@ -2,7 +2,7 @@ using System.IO;
 using System.Text.Json;
 using System.Windows.Input;
 
-namespace HybridPipPlayer;
+namespace blinkpip;
 
 /// <summary>전체 맵 검증 → changed-only 파일 교체 → 메모리 반영. 저장 실패 시 기존 맵 유지.</summary>
 public sealed class ShortcutStore
@@ -36,8 +36,7 @@ public sealed class ShortcutStore
         }
     }
 
-    public static ShortcutStore LoadDefault() => new(Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HybridPipPlayer", "shortcuts.json"));
+    public static ShortcutStore LoadDefault() => new(AppPaths.DataFile("shortcuts.json"));
 
     public IReadOnlyList<string> Keys(string id) => _overrides.TryGetValue(id, out var keys)
         ? keys.ToArray() : ShortcutCatalog.ById(id)?.DefaultKeys.ToArray() ?? Array.Empty<string>();
