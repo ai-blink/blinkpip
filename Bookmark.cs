@@ -61,7 +61,21 @@ public sealed class Bookmark
         new("디즈니+", "https://www.disneyplus.com", "D+", "#0A4FD1"),
         new("치지직", "https://chzzk.naver.com", "C", "#05B86A"),
         new("티빙", "https://www.tving.com", "T", "#E0245E"),
+        new("쿠팡플레이", "https://www.coupangplay.com", "C", "#1E66F5"),
+        new("웨이브", "https://www.wavve.com", "W", "#1351F9"),
+        new("왓챠", "https://watcha.com", "W", "#FF0558"),
+        new("라프텔", "https://laftel.net", "L", "#816BFF"),
+        new("Apple TV", "https://tv.apple.com/kr", "tv", "#3A3A3C"),
+        new("프라임 비디오", "https://www.primevideo.com", "P", "#00A8E1"),
     };
+
+    /// <summary>주소의 호스트(앞 www. 제외, 소문자). 같은 사이트인지 비교할 때 쓴다.</summary>
+    public static string HostKey(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var u)) return "";
+        string h = u.Host.ToLowerInvariant();
+        return h.StartsWith("www.") ? h[4..] : h;
+    }
 }
 
 /// <summary>북마크 저장소: LocalAppData\HybridPipPlayer\bookmarks.json. 파일이 없으면 기본 목록을 쓴다.</summary>

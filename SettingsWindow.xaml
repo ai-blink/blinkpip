@@ -297,8 +297,23 @@
                         <!-- 5. 북마크 · 정보 -->
                         <StackPanel x:Name="Pane4" Visibility="Collapsed">
                             <TextBlock Text="북마크 · 정보" Style="{StaticResource PaneTitle}"/>
-                            <TextBlock Text="북마크" Style="{StaticResource RowName}" Margin="0,0,0,8"/>
-                            <Border Background="{DynamicResource BarDeepBrush}" CornerRadius="6" BorderBrush="#14FFFFFF" BorderThickness="1" MaxHeight="190" Margin="0,0,0,22">
+                            <TextBlock Text="북마크 (상단 사이트 줄)" Style="{StaticResource RowName}" Margin="0,0,0,8"/>
+                            <!-- 추가·수정 칸 (SettingsWindow.Bookmarks.cs) -->
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="BmNameBox" Grid.Column="0" Height="28" VerticalContentAlignment="Center" Margin="0,0,6,0" ToolTip="이름 (비우면 도메인)"/>
+                                <TextBox x:Name="BmUrlBox" Grid.Column="1" Height="28" VerticalContentAlignment="Center" Margin="0,0,6,0" ToolTip="주소 (예: https://www.wavve.com)" KeyDown="BmUrlBox_KeyDown"/>
+                                <Button x:Name="BmSaveBtn" Grid.Column="2" Content="추가" Height="28" MinWidth="64" Click="BmSave_Click"/>
+                                <Button x:Name="BmCancelBtn" Grid.Column="3" Content="취소" Height="28" Margin="6,0,0,0" Click="BmCancel_Click" Visibility="Collapsed"/>
+                            </Grid>
+                            <TextBlock x:Name="BmStatus" Style="{StaticResource RowHint}" TextWrapping="Wrap" Margin="0,0,0,8"
+                                       Text="이름과 주소를 넣고 '추가'. 목록의 '수정'을 누르면 위 칸에서 고칠 수 있습니다."/>
+                            <Border Background="{DynamicResource BarDeepBrush}" CornerRadius="6" BorderBrush="#14FFFFFF" BorderThickness="1" MaxHeight="260" Margin="0,0,0,8">
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                 <ItemsControl x:Name="BookmarkList" Margin="4">
                                     <ItemsControl.ItemTemplate>
@@ -310,18 +325,22 @@
                                                     <ColumnDefinition Width="Auto"/>
                                                     <ColumnDefinition Width="Auto"/>
                                                     <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
                                                 <Border Width="16" Height="16" CornerRadius="4" Margin="8,0,8,0" Background="{Binding Brush}"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding Url}"/>
-                                                <Button Grid.Column="2" Content="&#xE70E;" FontFamily="Segoe MDL2 Assets" Width="28" Height="24" Margin="2,0" Tag="{Binding}" Click="BmUp_Click" ToolTip="위로"/>
-                                                <Button Grid.Column="3" Content="&#xE70D;" FontFamily="Segoe MDL2 Assets" Width="28" Height="24" Margin="2,0" Tag="{Binding}" Click="BmDown_Click" ToolTip="아래로"/>
-                                                <Button Grid.Column="4" Content="삭제" Height="24" Margin="2,0,6,0" Tag="{Binding}" Click="BmDelete_Click"/>
+                                                <Button Grid.Column="2" Content="수정" Height="24" Margin="2,0" Tag="{Binding}" Click="BmEdit_Click"/>
+                                                <Button Grid.Column="3" Content="&#xE70E;" FontFamily="Segoe MDL2 Assets" Width="28" Height="24" Margin="2,0" Tag="{Binding}" Click="BmUp_Click" ToolTip="위로"/>
+                                                <Button Grid.Column="4" Content="&#xE70D;" FontFamily="Segoe MDL2 Assets" Width="28" Height="24" Margin="2,0" Tag="{Binding}" Click="BmDown_Click" ToolTip="아래로"/>
+                                                <Button Grid.Column="5" Content="삭제" Height="24" Margin="2,0,6,0" Tag="{Binding}" Click="BmDelete_Click"/>
                                             </Grid>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                                 </ScrollViewer>
                             </Border>
+                            <Button Content="기본 사이트 다시 넣기" HorizontalAlignment="Left" Height="28" MinWidth="130" Margin="0,0,0,22" Click="BmRestoreDefaults_Click"
+                                    ToolTip="목록에 없는 기본 사이트(유튜브·넷플릭스·디즈니+·쿠팡플레이·웨이브·왓챠·라프텔·Apple TV·프라임 비디오 등)만 끝에 더합니다"/>
                             <TextBlock Text="단축키" Style="{StaticResource RowName}" Margin="0,0,0,8"/>
                             <StackPanel x:Name="ShortcutList" Margin="0,0,0,22"/>
                             <TextBlock Text="파일 연결" Style="{StaticResource RowName}" Margin="0,0,0,6"/>

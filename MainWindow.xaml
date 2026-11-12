@@ -37,15 +37,22 @@
                 <!-- 1줄: 주소 · 상태 · 동작 버튼 -->
                 <Grid x:Name="UrlRowGrid" Grid.Row="0" Margin="8,0">
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBox x:Name="UrlInputBox" Grid.Column="0" VerticalContentAlignment="Center" Margin="0,6,8,6"
+                    <!-- 웹 화면(엔진 B)용 뒤로·앞으로·새로 고침. 웹뷰가 보일 때만 켜진다 (MainWindow.Browse.cs) -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,6,0">
+                        <Button x:Name="WebBackBtn" Style="{StaticResource IconButton}" Content="&#xE72B;" Click="WebBackBtn_Click" IsEnabled="False" Margin="0,0,2,0" ToolTip="뒤로 (Alt+←)"/>
+                        <Button x:Name="WebForwardBtn" Style="{StaticResource IconButton}" Content="&#xE72A;" Click="WebForwardBtn_Click" IsEnabled="False" Margin="0,0,2,0" ToolTip="앞으로 (Alt+→)"/>
+                        <Button x:Name="WebReloadBtn" Style="{StaticResource IconButton}" Content="&#xE72C;" Click="WebReloadBtn_Click" IsEnabled="False" ToolTip="새로 고침 (F5)"/>
+                    </StackPanel>
+                    <TextBox x:Name="UrlInputBox" Grid.Column="1" VerticalContentAlignment="Center" Margin="0,6,8,6"
                              Text="https://www.youtube.com/watch?v=jfKfPfyJRdk" KeyDown="UrlInputBox_KeyDown"/>
-                    <TextBlock x:Name="StatusText" Grid.Column="1" VerticalAlignment="Center" Margin="0,0,8,0"
+                    <TextBlock x:Name="StatusText" Grid.Column="2" VerticalAlignment="Center" Margin="0,0,8,0"
                                Foreground="{DynamicResource WarnBrush}" MaxWidth="260" TextTrimming="CharacterEllipsis"/>
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
                         <Button x:Name="SettingsBtn" Style="{StaticResource IconButton}" Content="&#xE713;" Click="SettingsBtn_Click" Margin="2,0" ToolTip="설정"/>
                         <Button x:Name="RecentBtn" Style="{StaticResource IconButton}" Content="&#xE81C;" Click="RecentBtn_Click" Margin="2,0" ToolTip="최근 재생"/>
                         <Button Content="재생" Click="PlayBtn_Click" Margin="2,0"/>
@@ -56,7 +63,14 @@
 
                 <!-- 2줄: 북마크 (코드에서 채움) -->
                 <Border x:Name="BookmarkRowBorder" Grid.Row="1" Height="28" Background="{DynamicResource BarDeepBrush}">
-                    <StackPanel Orientation="Horizontal" Margin="8,0" VerticalAlignment="Center">
+                    <!-- 사이트 칩은 넘치면 마우스 휠로 가로 스크롤(MainWindow.Browse.cs), 내 파일·추가·편집은 오른쪽에 고정 -->
+                    <Grid Margin="8,0" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <ScrollViewer x:Name="BookmarkScroll" Grid.Column="0" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                      PreviewMouseWheel="BookmarkScroll_PreviewMouseWheel">
                         <ItemsControl x:Name="BookmarkBar" VerticalAlignment="Center">
                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
@@ -78,6 +92,8 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+                        </ScrollViewer>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="6,0,0,0">
                         <Button Style="{StaticResource ChipButton}" Click="MyFile_Click" ToolTip="내 컴퓨터의 파일 열기">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE8E5;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource SubTextBrush}" Margin="2,0,6,0" VerticalAlignment="Center"/>
@@ -87,7 +103,14 @@
                         <Button x:Name="AddBookmarkBtn" Style="{StaticResource ChipButton}" Click="AddBookmark_Click" ToolTip="주소창의 주소를 북마크로 추가 (칩 우클릭: 삭제)">
                             <TextBlock Text="＋ 추가" Foreground="{DynamicResource SubTextBrush}" Margin="4,0,0,0" VerticalAlignment="Center"/>
                         </Button>
-                    </StackPanel>
+                        <Button Style="{StaticResource ChipButton}" Click="EditBookmarks_Click" ToolTip="사이트 편집: 이름·주소 바꾸기, 순서, 삭제, 기본 사이트 다시 넣기">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource SubTextBrush}" Margin="2,0,6,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="편집" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        </StackPanel>
+                    </Grid>
                 </Border>
             </Grid>
         </Border>

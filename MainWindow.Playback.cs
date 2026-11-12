@@ -268,15 +268,21 @@ public partial class MainWindow
         catch (Exception ex) { SetStatus("폴더를 열지 못했습니다: " + ex.Message); }
     }
 
-    private void OpenSettings()
+    private void OpenSettings(int page = -1)
     {
-        if (_settingsWindow != null) { _settingsWindow.Activate(); return; }
+        if (_settingsWindow != null)
+        {
+            if (page >= 0) _settingsWindow.ShowPage(page);
+            _settingsWindow.Activate();
+            return;
+        }
         var win = new SettingsWindow(_settings, _bookmarks, () => _mpv?.GetAudioDevices() ?? new List<(string, string)>(), _diagnostics) { Owner = this };
         win.SettingChanged += name => OnSettingChanged(name);
         win.ToastPreviewRequested += ShowToastPreview;
         win.ConfigureShortcuts(_shortcuts);
         win.Closed += (_, _) => { _settingsWindow = null; BookmarkStore.Save(_bookmarks); };
         _settingsWindow = win;
+        if (page >= 0) win.ShowPage(page);
         win.Show();
     }
 

@@ -222,9 +222,17 @@ public partial class MainWindow : Window
                 !Uri.TryCreate("https://" + target, UriKind.Absolute, out uri)) return false;
             target = uri.AbsoluteUri;
         }
-        isOtt = (uri.Scheme is "http" or "https") && (HostIs(uri, "netflix.com") || HostIs(uri, "disneyplus.com"));
+        isOtt = (uri.Scheme is "http" or "https") && WebEngineHosts.Any(d => HostIs(uri, d));
         return true;
     }
+
+    // 웹뷰(엔진 B)로 여는 사이트: DRM 이 걸려 mpv(yt-dlp)로는 못 여는 OTT. 그 밖의 주소는 mpv 가 연다.
+    // 사이트 안에서 링크를 따라가는 이동은 이 목록과 상관없이 웹뷰 안에 머문다.
+    private static readonly string[] WebEngineHosts =
+    {
+        "netflix.com", "disneyplus.com", "tving.com", "tv.apple.com", "watcha.com",
+        "coupangplay.com", "wavve.com", "laftel.net", "primevideo.com",
+    };
 
     private Task<bool> EnsureWebViewAsync() => _webInit ??= InitWebViewAsync();
 
@@ -238,6 +246,7 @@ public partial class MainWindow : Window
             await DrmWebView.EnsureCoreWebView2Async(env);
             await DrmWebView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(OttViewportScript);
             HookOttMessages(DrmWebView.CoreWebView2);
+            InitBrowse(DrmWebView.CoreWebView2); // MainWindow.Browse.cs
             _diagnostics.SetEngineVersion(env.BrowserVersionString, web: true);
             DrmWebView.CoreWebView2.NavigationStarting += (_, e) => _diagnosticNavigation = e.NavigationId;
             DrmWebView.CoreWebView2.NavigationCompleted += (_, e) =>

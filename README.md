@@ -5,9 +5,11 @@ WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 
 | 엔진 | 대상 | 기술 |
 | --- | --- | --- |
 | A: libmpv | 로컬 영상, 유튜브 등 | `libmpv-2.dll` + `yt-dlp` + SponsorBlock(Lua) |
-| B: WebView2 | 넷플릭스, 디즈니+ (DRM) | Edge WebView2, 영구 프로필(`HybridPipPlayer_WebView2`)로 로그인 유지 |
+| B: WebView2 | 넷플릭스, 디즈니+ 등 DRM OTT | Edge WebView2, 영구 프로필(`HybridPipPlayer_WebView2`)로 로그인 유지 |
 
-`netflix.com` / `disneyplus.com`(서브도메인 포함)만 엔진 B로 가고, 나머지 URL·파일 경로는 엔진 A로 간다.
+`MainWindow.xaml.cs`의 `WebEngineHosts`(넷플릭스·디즈니+·티빙·Apple TV(`tv.apple.com`)·왓챠·쿠팡플레이·웨이브·라프텔·프라임 비디오, 서브도메인 포함)만 엔진 B로 가고, 나머지 URL·파일 경로는 엔진 A로 간다. 사이트 안 링크 이동은 웹뷰 안에 머문다. 자막 크기·창 아래 자막 줄·PIP 비율 맞춤은 넷플릭스·디즈니+에만 맞춰져 있다.
+
+**웹 화면 브라우징**(`MainWindow.Browse.cs`): 주소창 왼쪽 뒤로·앞으로·새로 고침 버튼(웹뷰가 보일 때만 켜짐), 주소창은 웹뷰의 현재 주소로 따라 바뀐다(입력 중에는 덮어쓰지 않음). 북마크 줄은 넘치면 휠로 가로 스크롤하고 **내 파일 · 추가 · 편집** 칩은 오른쪽에 고정된다. **편집**은 설정 → 북마크·정보를 열고, 거기서 이름·주소 추가·수정, 순서, 삭제, **기본 사이트 다시 넣기**(없는 기본 사이트만 끝에 추가)를 한다(`SettingsWindow.Bookmarks.cs`).
 
 ## 파일
 
@@ -16,6 +18,7 @@ WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 
 | 파일 | 역할 |
 | --- | --- |
 | `MainWindow.xaml(.cs)` | 창, 라우팅, PIP, 클릭 투과, 배경화면, 스냅, 비율 유지, 자막 크기, OTT 키 브릿지 |
+| `MainWindow.Browse.cs`, `SettingsWindow.Bookmarks.cs` | 웹 화면 뒤로·앞으로·새로 고침과 주소 따라가기, 북마크 줄 스크롤·편집 칩, 설정의 북마크 추가·수정·기본 사이트 다시 넣기 |
 | `MainWindow.Playback.cs` | 재생 줄(재생·탐색·건너뛰기 간격·속도·볼륨), 열기, 재생 목록 패널, 자막·소리 메뉴, 스크린샷과 토스트, 전체 화면, 이어 보기, 설정 연결 |
 | `ShortcutCatalog.cs`, `ShortcutStore.cs`, `MainWindow.Shortcuts.cs`, `MpvPlayer.Shortcuts.cs`, `SettingsWindow.Shortcuts.cs` | 단일 기본 키 표, 변경분 저장·충돌 검사, WPF/IME/OSK/mpv 연결, 검색·키 입력·복원 편집기 |
 | `MainWindow.Remote.cs` | 리모컨(4×3 창)과 기능 id를 기존 핸들러에 잇는 부분, 재생 줄에 올린 기능 아이콘 |
