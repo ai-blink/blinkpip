@@ -2,7 +2,7 @@
 
 릴리스 압축 파일(`blinkpip-<버전>-win-x64.zip`, 0.6.0은 `HybridPipPlayer-0.6.0-win-x64.zip`)에는 아래 외부 구성 요소가 함께 들어 있다. 각 구성 요소의 저작권과 라이선스는 원저작자에게 있다.
 
-| 구성 요소 | 0.6.0에 넣은 판 | 라이선스 | 출처·소스 코드 |
+| 구성 요소 | 넣은 판(0.6.0~0.6.1) | 라이선스 | 출처·소스 코드 |
 | --- | --- | --- | --- |
 | libmpv (`libmpv-2.dll`) | `v0.41.0-1227-ge471496c5` (shinchiro 빌드 20261021) | GPL-2.0-or-later / 이 빌드는 GPL 구성 요소를 포함해 GPL-3.0 조건 적용 | mpv 소스: <https://github.com/mpv-player/mpv> · 빌드 스크립트와 받은 파일: <https://github.com/shinchiro/mpv-winbuild-cmake/releases> |
 | yt-dlp (`yt-dlp.exe`) | `2026.10.26` | Unlicense(퍼블릭 도메인), 동봉된 Python 런타임 등은 각자의 라이선스 | <https://github.com/yt-dlp/yt-dlp> |

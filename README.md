@@ -1,6 +1,6 @@
 # blinkpip
 
-**버전 0.6.0** (2026-11-13) · 변경 기록 [CHANGELOG.md](CHANGELOG.md) · 외부 구성 요소 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+**버전 0.6.1** (2026-11-13) · 변경 기록 [CHANGELOG.md](CHANGELOG.md) · 라이선스 [GPL-3.0](LICENSE) · 외부 구성 요소 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
 
 WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 안에서 두 엔진을 URL로 자동 전환한다.
 

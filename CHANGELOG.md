@@ -3,7 +3,10 @@
 버전은 `blinkpip.csproj`의 `<Version>`이 정본이다(설정 → 북마크·정보에 표시). 크롬 확장 버전은 `extension/manifest.json`에 따로 있다.
 형식: 버전마다 날짜와 **추가 · 바뀜 · 고침** 묶음. 새 버전을 낼 때 맨 위에 적고 git 태그 `v<버전>`을 단다.
 
-## 미출시
+## 0.6.1 — 2026-11-13
+
+### 추가
+- **라이선스 GPL-3.0**(`LICENSE`). 함께 배포하는 libmpv·mpv_sponsorblock(GPL)과 조건을 맞췄다.
 
 ### 바뀜
 - **프로그램 이름을 blinkpip으로 바꿈**: 실행 파일 `blinkpip.exe`, 창·알림·설정·연결 프로그램 이름, 크롬 확장 이름. GitHub 저장소도 `ai-blink/blinkpip`(예전 주소는 GitHub가 넘겨 준다).
