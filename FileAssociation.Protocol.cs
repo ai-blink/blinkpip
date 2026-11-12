@@ -8,7 +8,7 @@ public static partial class FileAssociation
     {
         string exe = Environment.ProcessPath ?? throw new InvalidOperationException("실행 파일 경로를 알 수 없습니다.");
         if (!exe.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) || Path.GetFileName(exe).Equals("dotnet.exe", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("HybridPipPlayer.exe로 실행한 뒤 등록하세요.");
+            throw new InvalidOperationException("blinkpip.exe로 실행한 뒤 등록하세요.");
         return $"\"{exe}\" \"%1\"";
     }
     public static bool IsProtocolRegistered()
@@ -24,7 +24,7 @@ public static partial class FileAssociation
                 throw new InvalidOperationException("이 주소가 다른 프로그램에 등록되어 있습니다. 기존 등록을 확인하세요.");
         using (var key = Registry.CurrentUser.CreateSubKey(ProtocolKey))
         {
-            key.SetValue("", "URL:Hybrid PIP Player"); key.SetValue("URL Protocol", ""); key.SetValue("HybridPipPlayer.Owner", "HybridPipPlayer");
+            key.SetValue("", "URL:blinkpip"); key.SetValue("URL Protocol", ""); key.SetValue("HybridPipPlayer.Owner", "HybridPipPlayer");
             using var open = key.CreateSubKey(@"shell\open\command"); open.SetValue("", command);
         }
         SHChangeNotify(SHCNE_ASSOCCHANGED, 0, IntPtr.Zero, IntPtr.Zero);

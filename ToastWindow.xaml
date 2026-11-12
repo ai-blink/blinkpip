@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent" ResizeMode="NoResize"
         ShowInTaskbar="False" ShowActivated="False" Topmost="True" SizeToContent="Height" Width="392"
-        Focusable="False" Title="Hybrid PIP Player 알림">
+        Focusable="False" Title="blinkpip 알림">
     <!-- 영상 위에 잠깐 뜨는 알림. 활성화되지 않는 창이라(SourceInitialized) 재생 중인 창의 포커스를 가져가지 않는다.
          바깥 여백 16 은 그림자가 잘리지 않게 두는 공간이다. -->
     <Border Margin="16" CornerRadius="10" Background="{DynamicResource FieldBrush}" BorderBrush="#33FFFFFF" BorderThickness="1">

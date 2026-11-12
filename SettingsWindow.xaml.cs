@@ -345,7 +345,7 @@ public partial class SettingsWindow : Window
     {
         bool on = FileAssociation.IsRegistered();
         AssocBtn.Content = on ? "연결 프로그램에서 빼기" : "연결 프로그램에 등록";
-        AssocStatus.Text = on ? "등록됨: 영상·음악 파일 우클릭 → 연결 프로그램에 'Hybrid PIP Player' 가 나옵니다."
+        AssocStatus.Text = on ? "등록됨: 영상·음악 파일 우클릭 → 연결 프로그램에 'blinkpip' 가 나옵니다."
                               : "등록 안 됨. 현재 사용자 계정(HKCU)에만 쓰이고, 언제든 뺄 수 있습니다.";
     }
 

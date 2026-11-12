@@ -11,7 +11,7 @@ namespace HybridPipPlayer;
 /// </summary>
 public static partial class FileAssociation
 {
-    private const string AppKey = @"Software\Classes\Applications\HybridPipPlayer.exe";
+    private const string AppKey = @"Software\Classes\Applications\blinkpip.exe";
 
     [DllImport("shell32.dll")]
     private static extern void SHChangeNotify(int eventId, uint flags, IntPtr item1, IntPtr item2);
@@ -29,7 +29,7 @@ public static partial class FileAssociation
         string exe = Environment.ProcessPath ?? throw new InvalidOperationException("실행 파일 경로를 알 수 없습니다");
         using (var app = Registry.CurrentUser.CreateSubKey(AppKey))
         {
-            app.SetValue("FriendlyAppName", "Hybrid PIP Player");
+            app.SetValue("FriendlyAppName", "blinkpip");
             using var icon = app.CreateSubKey("DefaultIcon");
             icon.SetValue("", $"\"{exe}\",0");
             using var cmd = app.CreateSubKey(@"shell\open\command");

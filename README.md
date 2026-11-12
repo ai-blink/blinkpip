@@ -1,4 +1,4 @@
-# HybridPipPlayer
+# blinkpip
 
 **버전 0.6.0** (2026-11-13) · 변경 기록 [CHANGELOG.md](CHANGELOG.md) · 외부 구성 요소 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
 
@@ -6,7 +6,7 @@ WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 
 
 ## 내려받기
 
-[릴리스](../../releases) 에서 `HybridPipPlayer-<버전>-win-x64.zip`을 받아 원하는 폴더에 풀고 `HybridPipPlayer.exe`를 실행한다.
+[릴리스](../../releases) 에서 `blinkpip-<버전>-win-x64.zip`을 받아 원하는 폴더에 풀고 `blinkpip.exe`를 실행한다. (0.6.0 릴리스 파일은 예전 이름 `HybridPipPlayer-0.6.0-win-x64.zip`·`HybridPipPlayer.exe`다)
 
 - 윈도우 10/11 64비트. .NET 런타임이 들어 있어 따로 설치하지 않는다(자체 포함 배포).
 - libmpv, yt-dlp, SponsorBlock 스크립트가 함께 들어 있다(라이선스는 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)).
@@ -73,8 +73,8 @@ dotnet run --project C:\ai\projects\HybridPipPlayer
    ```powershell
    dotnet publish C:\ai\projects\HybridPipPlayer\HybridPipPlayer.csproj -c Release -r win-x64 --self-contained true -o <출력 폴더>\HybridPipPlayer
    ```
-   출력 폴더에 `README.md`, `CHANGELOG.md`, `THIRD_PARTY_NOTICES.md`를 넣고 `HybridPipPlayer-<버전>-win-x64.zip`으로 묶는다.
-4. 푸시 후 `gh release create v<버전> <zip> --title "HybridPipPlayer <버전>" --notes-file <해당 버전 패치 노트>`.
+   출력 폴더에 `README.md`, `CHANGELOG.md`, `THIRD_PARTY_NOTICES.md`를 넣고 `blinkpip-<버전>-win-x64.zip`으로 묶는다.
+4. 푸시 후 `gh release create v<버전> <zip> --title "blinkpip <버전>" --notes-file <해당 버전 패치 노트>`.
 
 ## 재생 줄과 부가 기능
 
@@ -234,7 +234,7 @@ mpv 화면에서는 `Ctrl+↑/↓`(영상 창 포커스)로도 자막 크기를 
 
 ```powershell
 $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS='--remote-debugging-port=9223 --remote-debugging-address=127.0.0.1'
-Start-Process C:\ai\projects\HybridPipPlayer\bin\Debug\net8.0-windows\HybridPipPlayer.exe
+Start-Process C:\ai\projects\HybridPipPlayer\bin\Debug\net8.0-windows\blinkpip.exe
 # 웹뷰는 OTT 버튼을 처음 누를 때 초기화되므로 그 뒤에 http://127.0.0.1:9223/json 으로 접속된다
 ```
 

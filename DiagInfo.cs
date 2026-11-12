@@ -127,7 +127,7 @@ public sealed class DiagInfo : IDisposable
         lock (_gate)
         {
             var text = new StringBuilder();
-            text.AppendLine($"Hybrid PIP Player {typeof(DiagInfo).Assembly.GetName().Version?.ToString(3)}");
+            text.AppendLine($"blinkpip {typeof(DiagInfo).Assembly.GetName().Version?.ToString(3)}");
             text.AppendLine($"엔진: {_engine}\n단계: {_stage}\n대상: {_source}\n최근 실패: {_failure}");
             text.AppendLine($"libmpv: {_mpvVersion}\nyt-dlp: {_ytdlpVersion}\nWebView2: {_webVersion}");
             text.AppendLine("흐름: 엔진 선택 → 주소 풀기(웹 주소) → 열기 → 재생 시작");

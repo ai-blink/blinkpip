@@ -526,7 +526,7 @@ btn2.textContent = '무테';
 btn2.style.cssText = btnCss;
 const appBtn = document.createElement('button');
 appBtn.textContent = '앱으로';
-appBtn.title = '이 영상을 Hybrid PIP Player 앱으로 보내기';
+appBtn.title = '이 영상을 blinkpip 앱으로 보내기';
 appBtn.style.cssText = btnCss;
 document.documentElement.append(btn, btn2, appBtn);
 let target = null, hideTimer = 0;

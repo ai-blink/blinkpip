@@ -3,6 +3,13 @@
 버전은 `HybridPipPlayer.csproj`의 `<Version>`이 정본이다(설정 → 북마크·정보에 표시). 크롬 확장 버전은 `extension/manifest.json`에 따로 있다.
 형식: 버전마다 날짜와 **추가 · 바뀜 · 고침** 묶음. 새 버전을 낼 때 맨 위에 적고 git 태그 `v<버전>`을 단다.
 
+## 미출시
+
+### 바뀜
+- **프로그램 이름을 blinkpip으로 바꿈**: 실행 파일 `blinkpip.exe`, 창·알림·설정·연결 프로그램 이름, 크롬 확장 이름. GitHub 저장소도 `ai-blink/blinkpip`(예전 주소는 GitHub가 넘겨 준다).
+- 설정·로그인 저장 폴더(`%LOCALAPPDATA%\HybridPipPlayer`, `HybridPipPlayer_WebView2`), 스크린샷 폴더, 확장 연결 주소(`hybridpip://`)는 그대로다. 기존 설정·OTT 로그인이 유지된다.
+- 연결 프로그램·확장 연결을 예전 `HybridPipPlayer.exe`로 등록해 두었다면 새 실행 파일에서 다시 등록한다.
+
 ## 0.6.0 — 2026-11-13
 
 첫 공개 릴리스. 그동안의 기능을 한 번에 묶었다.

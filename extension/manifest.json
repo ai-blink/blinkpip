@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Hybrid PiP Player",
+  "name": "blinkpip",
   "version": "0.5.0",
   "minimum_chrome_version": "116",
   "description": "어떤 사이트의 영상이든 재생 줄을 영상 아래에 두거나(PiP+), 타이틀바 없는 창(무테)과 따로 여는 컨트롤 창으로 띄우고, 자막 크기·글꼴·줄 수·배경을 바꾼다.",
@@ -8,7 +8,7 @@
     "storage"
   ],
   "action": {
-    "default_title": "Hybrid PiP 설정",
+    "default_title": "blinkpip 설정",
     "default_popup": "popup.html"
   },
   "background": {
