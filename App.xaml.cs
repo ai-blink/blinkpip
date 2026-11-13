@@ -21,6 +21,7 @@ public partial class App : System.Windows.Application
             return;
         }
         AppPaths.MigrateLegacy(); // 예전 이름(HybridPipPlayer) 저장 폴더를 blinkpip 으로 옮긴다 — 창(설정 읽기)보다 먼저
+        FileAssociation.RepairStale(); // 예전·사라진 실행 파일을 가리키는 확장 연결·연결 프로그램 등록을 지금 실행 파일로
         base.OnStartup(e);
     }
 

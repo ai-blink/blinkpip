@@ -24,9 +24,10 @@ public static partial class FileAssociation
         return cmd != null && Environment.ProcessPath != null && cmd.Contains(Environment.ProcessPath, StringComparison.OrdinalIgnoreCase);
     }
 
-    public static void Register()
+    public static void Register() => Register(Environment.ProcessPath ?? throw new InvalidOperationException("실행 파일 경로를 알 수 없습니다"));
+
+    internal static void Register(string exe)
     {
-        string exe = Environment.ProcessPath ?? throw new InvalidOperationException("실행 파일 경로를 알 수 없습니다");
         using (var app = Registry.CurrentUser.CreateSubKey(AppKey))
         {
             app.SetValue("FriendlyAppName", "blinkpip");
