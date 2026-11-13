@@ -37,7 +37,7 @@ WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 
 | `ToastWindow.xaml(.cs)` | 영상 위에 잠깐 뜨는 알림 창(포커스를 가져가지 않음). 스크린샷 저장 알림에 쓴다 |
 | `SettingsWindow.xaml(.cs)` | 설정 창(재생, 모양, PIP, 오디오·자막, 화면·소리 조절, 북마크·정보) |
 | `RemoteWindow.xaml(.cs)`, `FeatureCatalog.cs` | 리모컨 창과 올릴 수 있는 기능 목록 |
-| `PipControls.xaml(.cs)`, `LockOverlay.cs` | PIP 컨트롤 줄, PIP 왼쪽 위 자물쇠 버튼(별도 최상위 창) |
+| `PipControls.xaml(.cs)`, `LockOverlay.cs` | PIP 컨트롤 줄, PIP 왼쪽 위 자물쇠·PIP 나가기 버튼(별도 최상위 창) |
 | `MpvPlayer.Subtitles.cs`, `SubtitlePracticeController.cs`, `SubtitlePracticeSettings.cs`, `SubtitlePracticeWindow.cs`, `MainWindow.Subtitles.cs` | 자막 속성 관찰, 문장 반복 상태, 연습 설정·창·메뉴 연결 |
 | `MpvPlayer.cs` | libmpv P/Invoke 래퍼(옵션, 이벤트 스레드, 로그, 앰비언트 필터, SponsorBlock 설정, 재생 목록·트랙) |
 | `AppSettings.cs`, `Bookmark.cs`, `RecentStore.cs`, `ResumeStore.cs` | 설정, 북마크, 최근 재생, 이어 보기 저장소(`%LocalAppData%\blinkpip\` 아래 json) |
@@ -137,7 +137,7 @@ dotnet run --project C:\ai\projects\blinkpip
 
 재생 줄에는 뒤로·시간·앞으로·간격 변경을 한 묶음으로 둔다: `[ ‹ N | 0:32 / 1:00 | N › | ▾ ]`. 화살표 방향이 이동 방향이고, N은 건너뛰기 간격(초)이다. 간격은 `▾` 버튼(또는 방향 버튼 우클릭)의 팝업에서 `-5 -1 [N초] +1 +5`로 바로 바꾸거나(가운데 `N초`는 5초로 되돌림), 설정(재생 > 건너뛰기 간격)에서 바꾼다. 범위는 1~60초이고 `settings.json`의 `SeekSeconds`에 저장된다.
 
-PIP에서는 영상 위 좌클릭 드래그로 이동, 우클릭으로 복귀. 창 가장자리 드래그로 크기 조절(영상 실제 비율 유지).
+PIP에서는 영상 위 좌클릭 드래그로 이동, 우클릭 또는 PIP 나가기 버튼(아래 "PIP 잠금"의 자물쇠 오른쪽, ⧉ 모양)으로 복귀. 창 가장자리 드래그로 크기 조절(영상 실제 비율 유지).
 PIP는 테두리 여백 없이 영상이 창을 꽉 채운다. 그래서 가장자리 크기 조절도 마우스 훅이 직접 한다: 창 가장자리 8px 안을 누르면 누른 변의 반대쪽을 고정하고 영상 비율대로 크기를 바꾼다(그 누름은 영상으로 넘기지 않음). 자식 창 위라 크기 조절 화살표 커서는 나오지 않는다.
 mpv 화면에서는 `Ctrl+↑/↓`(영상 창 포커스)로도 자막 크기를 바꿀 수 있다.
 
@@ -151,7 +151,7 @@ mpv 화면에서는 `Ctrl+↑/↓`(영상 창 포커스)로도 자막 크기를 
 
 **자막 크기(웹뷰)**: `OttViewportScript`의 `SUBS` 표가 사이트별 자막 요소를 정한다(2026-11-13 실측) — 디즈니+ = `timed-text-override-region` shadow root 안 `.hive-subtitle-renderer-cue-window`(기본 ×2.0), 쿠팡플레이 = video.js `.vjs-text-track-display .vjs-text-track-cue`(×1.0), 웨이브 = `.subtitle-wrap .subtitle-box`(×1.0, 웨이브 주소에서만). 자막 상자를 아래 가운데 기준 `transform:scale`로 키운다. 배율은 사이트 `localStorage`에 따로 저장되고, `Ctrl+Alt+↑/↓`는 페이지의 `__hppSubStep(±1)`을 불러 0.2씩(0.6~4.0) 바꾼다. ASS 자막은 `sub-ass-override=scale`이라 원래 스타일을 유지한다.
 
-**PIP 잠금**: 커서가 PIP 위에 있으면 PIP 창 **바깥** 왼쪽 위 모서리 바로 위에 자물쇠 버튼(🔓/🔒)이 뜨고(영상·자막을 가리지 않음),
+**PIP 잠금·나가기 버튼**: 커서가 PIP 위에 있으면 PIP 창 **바깥** 왼쪽 위 모서리 바로 위에 자물쇠 버튼(🔓/🔒)과 그 오른쪽 PIP 나가기 버튼(⧉, `Ctrl+Alt+P`와 같음, 잠겨 있어도 동작)이 뜨고(영상·자막을 가리지 않음),
 커서가 PIP와 버튼을 모두 벗어난 뒤 설정의 "컨트롤 사라지는 시간"(기본 2초)이 지나면 사라진다. 위쪽 화면 공간이 모자라면 아래쪽, 둘 다 없으면 창 안쪽 왼쪽 위에 뜬다.
 잠그면 영상·웹뷰 창을 비활성화해 마우스가 닿지 않게 하고(마우스를 스칠 때마다 플레이어 UI가 뜨는 것을 막음),
 드래그 이동·크기 조절·우클릭 복귀도 막는다. `Ctrl+Alt+P`로 PIP를 나가면 자동으로 풀린다.

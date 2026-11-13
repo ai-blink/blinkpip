@@ -13,17 +13,24 @@ using FontFamily = System.Windows.Media.FontFamily;
 namespace blinkpip;
 
 /// <summary>
-/// PIP 왼쪽 위에 뜨는 작은 자물쇠 버튼. mpv/WebView2 는 자식 HWND 라 그 위에 WPF 요소를 겹칠 수 없으므로(Airspace)
+/// PIP 왼쪽 위에 뜨는 작은 버튼 줄: 자물쇠 + PIP 나가기. mpv/WebView2 는 자식 HWND 라 그 위에 WPF 요소를 겹칠 수 없으므로(Airspace)
 /// 별도 최상위 창으로 만든다. 활성화되지 않는 도구 창이라 포커스를 빼앗지 않는다.
 /// 위치·표시/숨김은 MainWindow 가 정한다.
 /// </summary>
 public sealed class LockOverlay : Window
 {
+    /// <summary>버튼 한 칸 크기와 칸 사이 간격(DIP). MainWindow.PositionOverlay 가 창 크기를 잡을 때 쓴다</summary>
+    public const int ButtonSize = 32, ButtonGap = 4;
+    public const int TotalWidth = ButtonSize * 2 + ButtonGap;
+
     private readonly TextBlock _icon;
     private readonly Border _border;
 
     /// <summary>자물쇠 버튼을 눌렀을 때</summary>
     public event Action? Clicked;
+
+    /// <summary>PIP 나가기 버튼을 눌렀을 때</summary>
+    public event Action? ExitClicked;
 
     public LockOverlay()
     {
@@ -35,7 +42,8 @@ public sealed class LockOverlay : Window
         Topmost = true;
         ResizeMode = ResizeMode.NoResize;
         Focusable = false;
-        Width = Height = 32;
+        Width = TotalWidth;
+        Height = ButtonSize;
 
         _icon = new TextBlock
         {
@@ -53,7 +61,33 @@ public sealed class LockOverlay : Window
             Child = _icon,
         };
         _border.MouseLeftButtonUp += (_, _) => Clicked?.Invoke();
-        Content = _border;
+        _border.Width = ButtonSize;
+
+        // 창으로 돌아가기(BackToWindow, U+E73F): 윈도우 11 Segoe Fluent Icons, 10 은 Segoe MDL2 Assets 에 같은 글자가 있다
+        var exit = new Border
+        {
+            Width = ButtonSize,
+            Margin = new Thickness(ButtonGap, 0, 0, 0),
+            Background = _border.Background,
+            CornerRadius = _border.CornerRadius,
+            Cursor = Cursors.Hand,
+            ToolTip = "PIP 나가기 (Ctrl+Alt+P · 영상 우클릭)",
+            Child = new TextBlock
+            {
+                Text = "",
+                FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"),
+                FontSize = 15,
+                Foreground = Brushes.White,
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+                VerticalAlignment = System.Windows.VerticalAlignment.Center,
+            },
+        };
+        exit.MouseLeftButtonUp += (_, _) => ExitClicked?.Invoke();
+
+        var row = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal };
+        row.Children.Add(_border);
+        row.Children.Add(exit);
+        Content = row;
         SetLocked(false);
 
         SourceInitialized += (_, _) =>

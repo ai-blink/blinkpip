@@ -188,6 +188,7 @@ public partial class MainWindow : Window
 
         _lockOverlay = new LockOverlay { Owner = this };
         _lockOverlay.Clicked += ToggleLock;
+        _lockOverlay.ExitClicked += () => { if (_isPipMode) ExitPip(); };
 
         // libmpv 초기화 (WinForms Panel 핸들 바인딩)
         try
@@ -430,14 +431,14 @@ public partial class MainWindow : Window
         NativeMethods.GetWindowRect(_hwnd, out var r);
         var wa = System.Windows.Forms.Screen.FromHandle(_hwnd).WorkingArea;
         double s = Scale;
-        int size = (int)(32 * s);
+        int size = (int)(LockOverlay.ButtonSize * s), width = (int)(LockOverlay.TotalWidth * s); // 자물쇠 + PIP 나가기 두 칸
         int gap = (int)(4 * s);
-        int x = Math.Clamp(r.Left, wa.Left, Math.Max(wa.Left, wa.Right - size));
+        int x = Math.Clamp(r.Left, wa.Left, Math.Max(wa.Left, wa.Right - width));
         int y;
         if (r.Top - gap - size >= wa.Top) y = r.Top - gap - size;                 // 위쪽 바깥
         else if (r.Bottom + gap + size <= wa.Bottom) y = r.Bottom + gap;           // 아래쪽 바깥
         else { x = r.Left + (int)(12 * s); y = r.Top + (int)((6 + PipStripHeight + 6) * s); } // 바깥 공간이 없으면 안쪽
-        NativeMethods.SetWindowPos(_lockOverlay.Hwnd, NativeMethods.HWND_TOPMOST, x, y, size, size, NativeMethods.SWP_NOACTIVATE);
+        NativeMethods.SetWindowPos(_lockOverlay.Hwnd, NativeMethods.HWND_TOPMOST, x, y, width, size, NativeMethods.SWP_NOACTIVATE);
     }
 
     // ───────── PIP ─────────
