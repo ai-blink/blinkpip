@@ -190,7 +190,7 @@ public partial class MainWindow : Window
 
         _lockOverlay = new LockOverlay { Owner = this };
         _lockOverlay.Clicked += ToggleLock;
-        _lockOverlay.ExitClicked += () => { if (_isPipMode) ExitPip(); };
+        _lockOverlay.ExitClicked += () => { if (_isPipMode) TogglePipMode(); };
 
         // libmpv 초기화 (WinForms Panel 핸들 바인딩)
         try
@@ -251,6 +251,7 @@ public partial class MainWindow : Window
             target = uri.AbsoluteUri;
         }
         isOtt = (uri.Scheme is "http" or "https") && WebEngineHosts.Any(d => HostIs(uri, d));
+        if (uri.Scheme is "http" or "https") ChzzkRoute.Apply(uri, ref target, ref isOtt); // 채널 홈 → 생방송, 클립 → 웹뷰
         return true;
     }
 
@@ -293,7 +294,8 @@ public partial class MainWindow : Window
         }
     }
 
-    private async Task RouteMediaAsync(string raw, HandoffRequest? handoff = null)
+    // forceWeb: 주소 규칙과 상관없이 웹뷰로 연다(PIP 를 나와 치지직 웹 페이지로 돌아갈 때)
+    private async Task RouteMediaAsync(string raw, HandoffRequest? handoff = null, bool forceWeb = false)
     {
         int revision = BeginMediaRoute();
         if (!TryNormalize(raw, out string target, out bool isOtt))
@@ -302,6 +304,7 @@ public partial class MainWindow : Window
             _diagnostics.Fail("엔진 선택", "열 수 없는 입력입니다: 파일 경로 또는 URL 을 확인하세요");
             return;
         }
+        if (forceWeb) isOtt = true;
         SetStatus("");
         _diagnostics.Begin(target, isOtt);
         if (isOtt || (!File.Exists(target) && !Directory.Exists(target))) SetPracticeEngine(!isOtt);
@@ -447,7 +450,9 @@ public partial class MainWindow : Window
 
     private void TogglePipMode()
     {
-        if (_isPipMode) ExitPip(); else EnterPip();
+        if (_isPipMode) { ExitPip(); ReturnToWebAfterPip(); return; }
+        HandChzzkToMpv(); // MainWindow.Browse.cs — 치지직 방송 페이지면 mpv 로 넘기고, PIP 를 나올 때 ReturnToWebAfterPip 로 돌아간다
+        EnterPip();
     }
 
     private void EnterPip()
