@@ -10,6 +10,10 @@
 | Microsoft Edge WebView2 SDK (`Microsoft.Web.WebView2.*.dll`, `WebView2Loader.dll`) | 1.0.2792.45 | Microsoft WebView2 SDK 라이선스(BSD 형식) | <https://www.nuget.org/packages/Microsoft.Web.WebView2> |
 | .NET 8 런타임(자체 포함 배포) | 8.x | MIT 및 .NET 고지 | <https://github.com/dotnet/runtime> |
 | Tabler Icons (재생 줄 아이콘 15개, `Assets/icons/*.png` — 실행 파일 안에 포함) | `@tabler/icons` 3.51.0 (0.6.1 다음 판부터) | MIT (아래 원문) | <https://github.com/tabler/tabler-icons> |
+| sherpa-onnx (`sherpa-onnx.dll`, `runtimes/win-x64/native/sherpa-onnx-c-api.dll`) — 자막 읽어 주기 | NuGet `org.k2fsa.sherpa.onnx` 2.0.1 (0.6.3부터) | Apache-2.0 | <https://github.com/k2-fsa/sherpa-onnx> |
+| ONNX Runtime (`runtimes/win-x64/native/onnxruntime.dll`) — sherpa-onnx가 씀 | 1.28.2 (0.6.3부터) | MIT | <https://github.com/microsoft/onnxruntime> |
+
+**압축 파일에 넣지 않고 처음 쓸 때 받는 것**: 자막 읽어 주기의 여자·남자 목소리 모델 Supertonic 3(Supertone Inc., sherpa-onnx int8 변환본 `sherpa-onnx-supertonic-3-tts-int8-2026-05-11`)은 OpenRAIL-M 라이선스(쓰임새 제한 포함)라 GPL 배포물에 섞지 않는다. 앱이 <https://github.com/k2-fsa/sherpa-onnx/releases/tag/tts-models> 에서 `%LocalAppData%\blinkpip\tts\`로 받는다. 모델 라이선스: <https://huggingface.co/Supertone/supertonic-3> · 원 저장소(2026-07-23 개발 종료·보관): <https://github.com/supertone-inc/supertonic>
 
 ## GPL 구성 요소의 소스 코드
 

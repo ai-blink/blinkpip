@@ -296,6 +296,8 @@ public partial class MainWindow
         // PIP 자막 줄·자막 글꼴/색도 같은 이유로 해당 부분만 다시 적용한다
         if (name == nameof(AppSettings.PipSubSize)) { ApplyStripStyle(); return; }
         if (name == nameof(AppSettings.PipSubBelow)) { ApplyPipSubMode(); return; }
+        if (name is nameof(AppSettings.SubTts) or nameof(AppSettings.SubTtsVoice) or nameof(AppSettings.SubTtsRate)
+                 or nameof(AppSettings.SubTtsPitch) or nameof(AppSettings.SubTtsVolume)) { ApplySubtitleTts(); return; }
         if (name is nameof(AppSettings.SubFont) or nameof(AppSettings.SubColor))
         {
             ApplySubStyle();

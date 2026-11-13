@@ -1,6 +1,6 @@
 # blinkpip
 
-**버전 0.6.2** (2026-11-14) · 변경 기록 [CHANGELOG.md](CHANGELOG.md) · 라이선스 [GPL-3.0](LICENSE) · 외부 구성 요소 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+**버전 0.6.3** (2026-11-14) · 변경 기록 [CHANGELOG.md](CHANGELOG.md) · 라이선스 [GPL-3.0](LICENSE) · 외부 구성 요소 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
 
 WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 안에서 두 엔진을 URL로 자동 전환한다.
 
@@ -40,6 +40,7 @@ WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 
 | `SettingsWindow.xaml(.cs)` | 설정 창(재생, 모양, PIP, 오디오·자막, 화면·소리 조절, 북마크·정보) |
 | `RemoteWindow.xaml(.cs)`, `FeatureCatalog.cs` | 리모컨 창과 올릴 수 있는 기능 목록 |
 | `PipControls.xaml(.cs)`, `LockOverlay.cs` | PIP 컨트롤 줄, PIP 왼쪽 위 자물쇠·PIP 나가기 버튼(별도 최상위 창) |
+| `SubtitleSpeaker.cs`, `MainWindow.SubtitleTts.cs` | 자막 읽어 주기: Supertonic 3(sherpa-onnx)·윈도우 음성 합성, 줄 차례, 모델 자동 받기, 메인 창·PIP 버튼 연결 |
 | `MpvPlayer.Subtitles.cs`, `SubtitlePracticeController.cs`, `SubtitlePracticeSettings.cs`, `SubtitlePracticeWindow.cs`, `MainWindow.Subtitles.cs` | 자막 속성 관찰, 문장 반복 상태, 연습 설정·창·메뉴 연결 |
 | `MpvPlayer.cs` | libmpv P/Invoke 래퍼(옵션, 이벤트 스레드, 로그, 앰비언트 필터, SponsorBlock 설정, 재생 목록·트랙) |
 | `AppSettings.cs`, `Bookmark.cs`, `RecentStore.cs`, `ResumeStore.cs` | 설정, 북마크, 최근 재생, 이어 보기 저장소(`%LocalAppData%\blinkpip\` 아래 json) |
@@ -98,6 +99,16 @@ dotnet run --project C:\ai\projects\blinkpip
 
 자막 지연과 재생 속도를 반영하고, 일반 A–B 반복과 동시에 켜지지 않는다. 파일·기본 자막 트랙·수동 탐색이 바뀌면 이전 문장 반복을 취소한다. 모드와 횟수는 `%LOCALAPPDATA%\blinkpip\subtitle-practice.json`에 저장한다. 목록은 메모리에 읽힌 자막 범위이며 웹 영상은 일부만 표시될 수 있다. 이미지 자막·끝 시각을 알 수 없는 문장·OTT 자막은 연습 대상에서 제외한다. 자막 자체의 속도/프레임 변환(`sub-speed`, `sub-fps`)을 별도로 변경한 경우 시간 제어를 끄고 안내한다. OTT 보호 영상 시작 감지·자막 읽기는 **확인 필요**다.
 
+## 자막 읽어 주기
+
+설정 → 오디오·자막 → **자막 읽어 주기**, 또는 PIP 왼쪽 위 소리 버튼으로 켜고 끈다. 자막 글자는 PIP 아래 자막 줄과 같은 길로 받는다(mpv `sub-text`, 웹뷰는 `SubtitleReadHosts` 사이트의 `hppsub:` 메시지 — 켜져 있으면 PIP가 아니어도 `window.__hppSubRead`로 읽기만 하고 영상 안 자막은 숨기지 않는다).
+
+- **목소리**(`SubtitleSpeaker.cs`): `st:0`·`st:1`(여자 1·2), `st:5`·`st:6`(남자 1·2)은 Supertonic 3(sherpa-onnx int8, CPU 4스레드, 단계 8). 2026-11-14 같은 자막 4줄을 화자 10명·Qwen3-TTS·Heami로 만들어 들어 보고 고른 화자다. 그 밖의 값은 윈도우 OneCore 목소리 이름(`""` = 기본). 이 PC(Ryzen 7 9800X3D) 실측 한 줄 합성 평균 0.5초·최대 0.8초. Qwen3-TTS(0.6B·1.7B, RTX 5090, 기본 transformers 경로)는 한 줄 6~13초라 실시간이 안 돼 뺐다.
+- **모델**: OpenRAIL-M이라 zip에 넣지 않는다. 여자·남자 목소리로 켜면 `%LocalAppData%\blinkpip\tts\`에 자동으로 받는다(약 129MB, `tar.exe`로 `_extract`에 푼 뒤 한 번에 옮김). 받는 동안·실패 시 윈도우 목소리로 읽고, 설정 창에 진행·실패 문구와 다시 받기 버튼이 보인다.
+- **줄 차례**: 읽던 줄은 끝까지 읽는다. 그동안 온 줄은 바로 합성해 두고 1.25배 빠르게 이어 읽으며, 또 바뀌면 가장 최근 줄만 남긴다. 빈 자막은 말을 끊지 않는다. mpv는 일시정지하면 멈추고 다시 재생하면 지금 줄부터 읽는다.
+- **높낮이·크기·속도**: 높낮이는 재생 표본율을 높낮이 배로 바꾸고 합성 속도를 `속도/높낮이`로 맞춰 빠르기를 유지한다(0.80~1.25). 크기는 표본에 곱한다(10~150%). 윈도우 목소리는 `SpeechSynthesizerOptions`의 `AudioPitch`·`AudioVolume`(최대 100%)·`SpeakingRate`.
+- **언어**: 한글이 있으면 `ko`, 가나가 있으면 `ja`, 그 밖은 `en`. 원 저장소는 2026-07-23 개발이 끝나 보관됐다(받아 둔 모델은 계속 쓸 수 있다).
+
 ## 확장에서 앱으로 보내기
 
 앱의 **설정 → 북마크·정보 → 확장에서 앱으로 열기 → 확장 연결 등록**을 한 번 누른다. 확장에서 영상 위의 **앱으로**를 누르고 주소와 선택 항목을 확인한 뒤 **앱에서 열기**를 누른다. 기본 선택은 보던 위치만이며, 외부 자막 파일 주소·속도·PIP 시작은 따로 선택한다. 앱을 옮기면 다시 등록한다. 등록은 현재 사용자에게만 적용한다.
@@ -155,7 +166,7 @@ mpv 화면에서는 `Ctrl+↑/↓`(영상 창 포커스)로도 자막 크기를 
 
 **자막 크기(웹뷰)**: `OttViewportScript`의 `SUBS` 표가 사이트별 자막 요소를 정한다(2026-11-13 실측) — 디즈니+ = `timed-text-override-region` shadow root 안 `.hive-subtitle-renderer-cue-window`(기본 ×2.0), 쿠팡플레이 = video.js `.vjs-text-track-display .vjs-text-track-cue`(×1.0), 웨이브 = `.subtitle-wrap .subtitle-box`(×1.0, 웨이브 주소에서만), 넷플릭스 = `.player-timedtext .player-timedtext-text-container`(×1.0, 2026-11-14 실측). 자막 상자를 아래 가운데 기준 `transform:scale`로 키운다. 배율은 사이트 `localStorage`에 따로 저장되고, `Ctrl+Alt+↑/↓`는 페이지의 `__hppSubStep(±1)`을 불러 0.2씩(0.6~4.0) 바꾼다. ASS 자막은 `sub-ass-override=scale`이라 원래 스타일을 유지한다.
 
-**PIP 잠금·나가기 버튼**: 커서가 PIP 위에 있으면 PIP 창 **바깥** 왼쪽 위 모서리 바로 위에 자물쇠 버튼(🔓/🔒)과 그 오른쪽 PIP 나가기 버튼(⧉, `Ctrl+Alt+P`와 같음, 잠겨 있어도 동작)이 뜨고(영상·자막을 가리지 않음),
+**PIP 잠금·나가기 버튼**: 커서가 PIP 위에 있으면 PIP 창 **바깥** 왼쪽 위 모서리 바로 위에 자물쇠 버튼(🔓/🔒)과 그 오른쪽 PIP 나가기 버튼(⧉, `Ctrl+Alt+P`와 같음, 잠겨 있어도 동작), 자막 읽어 주기 소리 버튼(켜짐 = 소리, 꺼짐 = 음소거 모양)이 뜨고(영상·자막을 가리지 않음),
 커서가 PIP와 버튼을 모두 벗어난 뒤 설정의 "컨트롤 사라지는 시간"(기본 2초)이 지나면 사라진다. 위쪽 화면 공간이 모자라면 아래쪽, 둘 다 없으면 창 안쪽 왼쪽 위에 뜬다.
 잠그면 영상·웹뷰 창을 비활성화해 마우스가 닿지 않게 하고(마우스를 스칠 때마다 플레이어 UI가 뜨는 것을 막음),
 드래그 이동·크기 조절·우클릭 복귀도 막는다. `Ctrl+Alt+P`로 PIP를 나가면 자동으로 풀린다.
@@ -166,6 +177,7 @@ mpv 화면에서는 `Ctrl+↑/↓`(영상 창 포커스)로도 자막 크기를 
 `%LocalAppData%\blinkpip\` — `mpv.log`(경고 이상 로그), `mpvcfg\`(SponsorBlock 설정·스크립트 사본), `settings.json`(설정), `bookmarks.json`, 최근 재생·이어 보기 기록.
 `내 사진\blinkpip\` — 스크린샷 저장 폴더(OneDrive로 리디렉션된 PC에서는 OneDrive 사진 폴더 아래).
 `%LocalAppData%\blinkpip_WebView2\` — WebView2 프로필(로그인 유지).
+`%LocalAppData%\blinkpip\tts\` — 자막 읽어 주기 목소리 모델(Supertonic 3, 자동으로 받음).
 
 ## 설계 결정과 실측 기록
 

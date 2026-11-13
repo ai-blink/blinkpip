@@ -26,12 +26,97 @@ public partial class SettingsWindow
         PipSubBelowToggle.IsChecked = _s.PipSubBelow;
         PipSubSizeSlider.Value = _s.PipSubSize;
         PipSubSizeText.Text = $"{_s.PipSubSize}";
+        SubTtsToggle.IsChecked = _s.SubTts;
+        SubTtsRateSlider.Value = _s.SubTtsRate;
+        SubTtsRateText.Text = $"{_s.SubTtsRate:0.0}×";
+        SubTtsPitchSlider.Value = _s.SubTtsPitch;
+        SubTtsPitchText.Text = $"{_s.SubTtsPitch:0.00}";
+        SubTtsVolumeSlider.Value = _s.SubTtsVolume;
+        SubTtsVolumeText.Text = $"{_s.SubTtsVolume * 100:0}%";
+        UpdateSubTtsModel();
+        HookSubTtsModel();
         UpdateSubStyleLabels();
+    }
+
+    /// <summary>PIP 의 목소리 버튼으로 켜고 끈 것을 토글에 반영한다</summary>
+    public void SyncSubTts()
+    {
+        _loading = true;
+        SubTtsToggle.IsChecked = _s.SubTts;
+        _loading = false;
+    }
+
+    private void UpdateSubTtsModel()
+    {
+        bool ready = SubtitleSpeaker.ModelReady;
+        if (!SubtitleSpeaker.ModelDownloading)
+            SubTtsModelText.Text = ready ? "받아 둠 — 여자·남자 목소리를 쓸 수 있습니다." : "없음 — 자막 읽기를 켜면 자동으로 받습니다(Supertonic 3, OpenRAIL-M 라이선스).";
+        SubTtsModelBtn.Visibility = ready ? Visibility.Collapsed : Visibility.Visible;
+        SubTtsModelBtn.IsEnabled = !SubtitleSpeaker.ModelDownloading;
+    }
+
+    // 자동 받기(MainWindow.EnsureTtsModel)와 같은 작업의 진행 소식을 받는다. 창이 닫히면 끊는다
+    private void HookSubTtsModel()
+    {
+        Action<string> onStatus = m => { SubTtsModelText.Text = m; UpdateSubTtsModel(); };
+        SubtitleSpeaker.ModelStatus += onStatus;
+        Closed += (_, _) => SubtitleSpeaker.ModelStatus -= onStatus;
+    }
+
+    private async void SubTtsModelBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var job = SubtitleSpeaker.EnsureModelAsync();
+        UpdateSubTtsModel();
+        try { await job; } catch (Exception) { /* 실패 문구는 ModelStatus 로 온다 */ }
+        UpdateSubTtsModel();
+    }
+
+    private void SubTtsPitch_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_loading) return;
+        _s.SubTtsPitch = Math.Round(SubTtsPitchSlider.Value, 2);
+        SubTtsPitchText.Text = $"{_s.SubTtsPitch:0.00}";
+        Changed(nameof(AppSettings.SubTtsPitch));
+    }
+
+    private void SubTtsVolume_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_loading) return;
+        _s.SubTtsVolume = Math.Round(SubTtsVolumeSlider.Value, 2);
+        SubTtsVolumeText.Text = $"{_s.SubTtsVolume * 100:0}%";
+        Changed(nameof(AppSettings.SubTtsVolume));
+    }
+
+    private void SubTts_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        _s.SubTts = SubTtsToggle.IsChecked == true;
+        Changed(nameof(AppSettings.SubTts));
+    }
+
+    private void SubTtsRate_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_loading) return;
+        _s.SubTtsRate = Math.Round(SubTtsRateSlider.Value, 1);
+        SubTtsRateText.Text = $"{_s.SubTtsRate:0.0}×";
+        Changed(nameof(AppSettings.SubTtsRate));
+    }
+
+    private void SubTtsVoicePick_Click(object sender, RoutedEventArgs e)
+    {
+        var names = SubtitleSpeaker.SupertonicVoices.Select(v => v.Id).Append("").Concat(SubtitleSpeaker.WindowsVoiceNames());
+        ShowMenu(SubTtsVoicePick, names.Select(n => (SubtitleSpeaker.VoiceLabel(n), n == _s.SubTtsVoice, (Action)(() =>
+        {
+            _s.SubTtsVoice = n;
+            UpdateSubStyleLabels();
+            Changed(nameof(AppSettings.SubTtsVoice));
+        }))));
     }
 
     private void UpdateSubStyleLabels()
     {
         SubFontPick.Content = (_s.SubFont.Length == 0 ? "기본" : _s.SubFont) + "  ▾";
+        SubTtsVoicePick.Content = SubtitleSpeaker.VoiceLabel(_s.SubTtsVoice) + "  ▾";
         SubColorPick.Content = (ColorCandidates.FirstOrDefault(c => c.Hex.Equals(_s.SubColor, StringComparison.OrdinalIgnoreCase)).Name ?? _s.SubColor) + "  ▾";
     }
 

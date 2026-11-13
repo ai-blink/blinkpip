@@ -270,6 +270,57 @@
                             </Grid>
                             <Grid Style="{StaticResource Row}">
                                 <StackPanel HorizontalAlignment="Left">
+                                    <TextBlock Text="자막 읽어 주기" Style="{StaticResource RowName}"/>
+                                    <TextBlock Text="자막을 소리로 읽습니다. 읽던 줄은 끝까지 읽고, 자막이 빨리 바뀌면 가장 최근 줄을 조금 빠르게 이어 읽습니다. 로컬·유튜브 영상과 넷플릭스·디즈니+·쿠팡플레이·웨이브에 적용됩니다. 이미지 자막은 읽지 못합니다. PIP 왼쪽 위 소리 버튼으로도 켜고 끕니다." Style="{StaticResource RowHint}" MaxWidth="280"/>
+                                </StackPanel>
+                                <CheckBox x:Name="SubTtsToggle" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" Checked="SubTts_Changed" Unchecked="SubTts_Changed"/>
+                            </Grid>
+                            <Grid Style="{StaticResource Row}">
+                                <StackPanel HorizontalAlignment="Left">
+                                    <TextBlock Text="읽어 주는 목소리" Style="{StaticResource RowName}"/>
+                                    <TextBlock Text="여자·남자 목소리는 Supertonic 3(내 PC에서 합성, 인터넷 불필요)입니다. 모델이 없으면 윈도우 기본 목소리로 읽습니다." Style="{StaticResource RowHint}" MaxWidth="280"/>
+                                </StackPanel>
+                                <Button x:Name="SubTtsVoicePick" HorizontalAlignment="Right" VerticalAlignment="Center" MinWidth="160" MaxWidth="280" Height="28" Click="SubTtsVoicePick_Click"/>
+                            </Grid>
+                            <Grid Style="{StaticResource Row}">
+                                <StackPanel HorizontalAlignment="Left">
+                                    <TextBlock Text="목소리 모델" Style="{StaticResource RowName}"/>
+                                    <TextBlock x:Name="SubTtsModelText" Style="{StaticResource RowHint}" MaxWidth="280"/>
+                                </StackPanel>
+                                <Button x:Name="SubTtsModelBtn" Content="모델 받기 (약 129MB)" HorizontalAlignment="Right" VerticalAlignment="Center" MinWidth="160" Height="28" Click="SubTtsModelBtn_Click"/>
+                            </Grid>
+                            <Grid Style="{StaticResource Row}">
+                                <StackPanel HorizontalAlignment="Left">
+                                    <TextBlock Text="목소리 높낮이" Style="{StaticResource RowName}"/>
+                                    <TextBlock Text="1.00 이 원래 목소리입니다. 빠르기는 그대로 둡니다." Style="{StaticResource RowHint}" MaxWidth="280"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                    <Slider x:Name="SubTtsPitchSlider" Style="{StaticResource PlayerSlider}" Width="170" Minimum="0.8" Maximum="1.25" TickFrequency="0.05" IsSnapToTickEnabled="True" ValueChanged="SubTtsPitch_ValueChanged"/>
+                                    <TextBlock x:Name="SubTtsPitchText" Style="{StaticResource ValueText}"/>
+                                </StackPanel>
+                            </Grid>
+                            <Grid Style="{StaticResource Row}">
+                                <StackPanel HorizontalAlignment="Left">
+                                    <TextBlock Text="읽는 소리 크기" Style="{StaticResource RowName}"/>
+                                    <TextBlock Text="영상 소리와 따로 조절합니다. 100% 를 넘기면 여자·남자 목소리만 더 커집니다." Style="{StaticResource RowHint}" MaxWidth="280"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                    <Slider x:Name="SubTtsVolumeSlider" Style="{StaticResource PlayerSlider}" Width="170" Minimum="0.1" Maximum="1.5" TickFrequency="0.05" IsSnapToTickEnabled="True" ValueChanged="SubTtsVolume_ValueChanged"/>
+                                    <TextBlock x:Name="SubTtsVolumeText" Style="{StaticResource ValueText}"/>
+                                </StackPanel>
+                            </Grid>
+                            <Grid Style="{StaticResource Row}">
+                                <StackPanel HorizontalAlignment="Left">
+                                    <TextBlock Text="읽는 속도" Style="{StaticResource RowName}"/>
+                                    <TextBlock Text="기본은 1.0 입니다. 대사가 빠른 영상은 높이면 덜 끊깁니다." Style="{StaticResource RowHint}" MaxWidth="280"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                    <Slider x:Name="SubTtsRateSlider" Style="{StaticResource PlayerSlider}" Width="170" Minimum="0.5" Maximum="3" TickFrequency="0.1" IsSnapToTickEnabled="True" ValueChanged="SubTtsRate_ValueChanged"/>
+                                    <TextBlock x:Name="SubTtsRateText" Style="{StaticResource ValueText}"/>
+                                </StackPanel>
+                            </Grid>
+                            <Grid Style="{StaticResource Row}">
+                                <StackPanel HorizontalAlignment="Left">
                                     <TextBlock Text="선호 자막 언어" Style="{StaticResource RowName}"/>
                                     <TextBlock Text="쉼표로 구분한 언어 코드, 예: ko,kor,en. 비우면 기본 동작입니다. 다음에 여는 파일부터 적용됩니다." Style="{StaticResource RowHint}" MaxWidth="280"/>
                                 </StackPanel>

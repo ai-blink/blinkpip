@@ -31,6 +31,11 @@ public sealed class AppSettings
     public int SubFontSize { get; set; } = 90;                 // mpv sub-font-size (기본 90)
     public string SubFont { get; set; } = "";                  // 자막 글꼴 이름(비면 기본). mpv·디즈니+·PIP 아래 자막 줄 공통
     public string SubColor { get; set; } = "#FFFFFF";          // 자막 글자 색 #RRGGBB
+    public bool SubTts { get; set; }                           // 자막 읽어 주기(윈도우 음성 합성)
+    public string SubTtsVoice { get; set; } = SubtitleSpeaker.DefaultVoice; // "st:<화자>"(Supertonic 3) 또는 윈도우 목소리 표시 이름("" = 윈도우 기본)
+    public double SubTtsRate { get; set; } = 1.0;              // 말 속도 0.5~3.0
+    public double SubTtsPitch { get; set; } = 1.0;             // 높낮이 배율 0.8~1.25
+    public double SubTtsVolume { get; set; } = 1.0;            // 크기 0.1~1.5 (윈도우 목소리는 1.0 까지)
     // 스크린샷 알림(토스트)
     public double ToastOpacity { get; set; } = 0.9;            // 0.3~1.0 (1 이면 불투명)
     public double ToastSeconds { get; set; } = 8;              // 떠 있는 시간(초) 2~30
@@ -83,6 +88,10 @@ public sealed class AppSettings
         // 글꼴·색은 mpv 옵션과 웹 페이지 CSS 에 그대로 들어가므로 글자·숫자·공백·하이픈만 허용한다
         SubFont = new string((SubFont ?? "").Where(c => char.IsLetterOrDigit(c) || c == ' ' || c == '-').Take(60).ToArray()).Trim();
         if (SubColor is not { Length: 7 } || SubColor[0] != '#' || !SubColor.Skip(1).All(char.IsAsciiHexDigit)) SubColor = "#FFFFFF";
+        SubTtsVoice ??= "";
+        SubTtsRate = Math.Clamp(double.IsFinite(SubTtsRate) ? SubTtsRate : 1.0, 0.5, 3.0);
+        SubTtsPitch = Math.Clamp(double.IsFinite(SubTtsPitch) ? SubTtsPitch : 1.0, 0.8, 1.25);
+        SubTtsVolume = Math.Clamp(double.IsFinite(SubTtsVolume) ? SubTtsVolume : 1.0, 0.1, 1.5);
         ToastOpacity = Math.Clamp(double.IsFinite(ToastOpacity) ? ToastOpacity : 0.9, 0.3, 1.0);
         ToastSeconds = Math.Clamp(double.IsFinite(ToastSeconds) ? ToastSeconds : 8, 2, 30);
         VideoAdjust = FixArray(VideoAdjust, 4, -100, 100);

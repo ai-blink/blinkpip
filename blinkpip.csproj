@@ -12,7 +12,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- 앱 버전(설정 창 정보·파일 속성에 나온다). 바꿀 때 CHANGELOG.md 에 기록한다 -->
-    <Version>0.6.2</Version>
+    <Version>0.6.3</Version>
     <!-- 프로그램 이름 blinkpip(실행 파일 blinkpip.exe, 네임스페이스 blinkpip). 0.6.0 까지의 이름 HybridPipPlayer 는
          저장 폴더 옮기기(AppPaths.MigrateLegacy)와 확장 연결 주소(hybridpip://, 설치된 확장과의 약속)에만 남는다 -->
     <AssemblyName>blinkpip</AssemblyName>
@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2792.45" />
+    <PackageReference Include="org.k2fsa.sherpa.onnx" Version="2.0.1" />
   </ItemGroup>
 
   <ItemGroup>

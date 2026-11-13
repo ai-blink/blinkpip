@@ -160,6 +160,7 @@ public partial class MainWindow
                 string text = msg.Substring(7);
                 if (text.Length > 500) text = text.Substring(0, 500);
                 SetStripText(text);
+                SpeakSubtitle(text); // 자막 읽어 주기 (MainWindow.SubtitleTts.cs)
             }
             else if (msg.StartsWith("hppaspect:", StringComparison.Ordinal) && AspectHosts.Any(d => HostIs(src, d)))
                 OnWebVideoSize(msg.Substring(10));
@@ -191,6 +192,8 @@ public partial class MainWindow
         string js = "try{localStorage.setItem('__hppSubColor'," + JsonSerializer.Serialize(_settings.SubColor) + ");" +
                     "localStorage.setItem('__hppSubFont'," + JsonSerializer.Serialize(_settings.SubFont) + ");}catch(e){}" +
                     "window.__hppSubBelow=" + (StripWanted ? "true" : "false") + ";window.__hppApplySub&&window.__hppApplySub();" +
+                    "window.__hppSubRead=" + (TtsWanted ? "true" : "false") + ";" + // 자막 읽어 주기 — 자막을 감추지 않고 글자만 받는다
+
                     "window.__hppPip=" + (_isPipMode ? "true" : "false") + ";window.__hppApplyFill&&window.__hppApplyFill();"; // PIP 에서 플레이어를 창 전체로
         try { await DrmWebView.CoreWebView2.ExecuteScriptAsync(js); }
         catch (Exception) { /* 페이지 전환 중 — NavigationCompleted 에서 다시 보낸다 */ }

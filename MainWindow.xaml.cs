@@ -72,7 +72,8 @@ public partial class MainWindow : Window
             };
             let lastSub = null;
             setInterval(() => {
-                if (!window.__hppSubBelow || !window.chrome?.webview) { lastSub = null; return; }
+                // __hppSubRead = 호스트의 '자막 읽어 주기'. 이때는 자막을 감추지 않고 글자만 보낸다
+                if (!(window.__hppSubBelow || window.__hppSubRead) || !window.chrome?.webview) { lastSub = null; return; }
                 const k = subKind(), root = k && SUBS[k].root();
                 const text = root ? [...root.querySelectorAll(SUBS[k].sel)].map(e => (e.innerText || e.textContent || '').trim()).filter(Boolean).join('\n') : '';
                 if (text !== lastSub) { lastSub = text; window.chrome.webview.postMessage('hppsub:' + text); }
@@ -225,6 +226,7 @@ public partial class MainWindow : Window
         _lockOverlay = new LockOverlay { Owner = this };
         _lockOverlay.Clicked += ToggleLock;
         _lockOverlay.ExitClicked += () => { if (_isPipMode) TogglePipMode(); };
+        _lockOverlay.SpeechClicked += ToggleSubTts; // 자막 읽어 주기 켜기/끄기 (MainWindow.SubtitleTts.cs)
 
         // libmpv 초기화 (WinForms Panel 핸들 바인딩)
         try
@@ -251,6 +253,7 @@ public partial class MainWindow : Window
         }
 
         InitPipExtras(); // PIP 재생 컨트롤·아래 자막 줄 (MainWindow.PipExtras.cs)
+        InitSubtitleTts(); // 자막 읽어 주기 (MainWindow.SubtitleTts.cs)
         InitializeShortcuts();
         InitPlayback(); // 설정·북마크·재생 줄 (MainWindow.Playback.cs)
 
@@ -470,7 +473,7 @@ public partial class MainWindow : Window
         NativeMethods.GetWindowRect(_hwnd, out var r);
         var wa = System.Windows.Forms.Screen.FromHandle(_hwnd).WorkingArea;
         double s = Scale;
-        int size = (int)(LockOverlay.ButtonSize * s), width = (int)(LockOverlay.TotalWidth * s); // 자물쇠 + PIP 나가기 두 칸
+        int size = (int)(LockOverlay.ButtonSize * s), width = (int)(LockOverlay.TotalWidth * s); // 자물쇠 + PIP 나가기 + 자막 읽기 세 칸
         int gap = (int)(4 * s);
         int x = Math.Clamp(r.Left, wa.Left, Math.Max(wa.Left, wa.Right - width));
         int y;
