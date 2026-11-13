@@ -1,6 +1,6 @@
 # blinkpip
 
-**버전 0.6.1** (2026-11-13) · 변경 기록 [CHANGELOG.md](CHANGELOG.md) · 라이선스 [GPL-3.0](LICENSE) · 외부 구성 요소 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+**버전 0.6.2** (2026-11-14) · 변경 기록 [CHANGELOG.md](CHANGELOG.md) · 라이선스 [GPL-3.0](LICENSE) · 외부 구성 요소 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
 
 WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 안에서 두 엔진을 URL로 자동 전환한다.
 
@@ -253,7 +253,7 @@ Start-Process C:\ai\projects\blinkpip\bin\Debug\net8.0-windows\blinkpip.exe
 **새로 쓴 것(원본과 같다고 보증하지 않음)**
 - `MainWindow.Playback.cs` 전체: 이 파일 안의 모든 메서드와, 이를 부르던 `MainWindow.xaml.cs`의 빠진 필드·핸들러. 원본의 시작 내용이 되는 전체 작성 기록이 없어 그 위에 쌓인 패치가 적용되지 않았다.
 - `AppSettings`의 `VideoAdjust`, `EqBands`, `RemoteFavorites`, `MainExtras`(복원본에 선언이 없었다), `SettingsWindow.xaml`의 "화면 · 소리 조절" 페이지, `MainWindow.xaml`의 `ExtraPanel`.
-- `Assets/icons`의 아이콘 PNG 전부(원본은 복구 불가, 임시 모양).
+- `Assets/icons`의 아이콘 PNG 전부(원본은 복구 불가, 임시 모양 — 0.6.2에서 Tabler Icons로 교체).
 
 **복구하지 못한 것**
 - 원래의 git 기록(첫 커밋 `feat: WPF 하이브리드 PIP 플레이어`가 있었다).
