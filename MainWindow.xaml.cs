@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -23,30 +24,54 @@ public partial class MainWindow : Window
             // 자막 확대(Disney+ 실측 구조): 자막은 <timed-text-override-region> 의 shadow root 안 .hive-subtitle-renderer-cue-window 에
             // 그려지고 글자 크기는 줄마다 인라인 px 로 박혀 있어(플레이어 폭에 비례) 바깥 CSS 가 닿지 않는다.
             // 그래서 shadow root 안에 <style> 을 넣어 창 단위로 scale 한다(하단 중앙 기준이라 위로 자란다).
-            // 배율은 localStorage 에 저장되고 호스트의 Ctrl+Alt+↑/↓ 가 값을 바꾼 뒤 __hppApplySub 를 호출한다.
+            // 쿠팡플레이(video.js, 2026-11-13 실측): 자막은 .vjs-text-track-display 안 .vjs-text-track-cue 에 줄마다 인라인 font 로
+            // 그려진다(shadow root 아님) — 같은 방식으로 문서 <style> 에 넣는다. 원래 크기가 적당해서 기본 배율은 1.0 이다.
+            // 배율은 사이트(구조)마다 localStorage 에 따로 저장한다. 호스트의 Ctrl+Alt+↑/↓ 는 __hppSubStep(±1) 로 한 단계씩만 바꾼다.
             // 글꼴·색(__hppSubFont/__hppSubColor)도 호스트가 localStorage 에 넣는다(호스트에서 글자·숫자·공백·#hex 만 허용).
             // __hppSubBelow 가 켜지면(PIP + '창 아래 자막') 자막을 투명하게 감추고 글자만 호스트로 보낸다.
             // visibility:hidden 은 innerText 를 비게 만들어서 opacity:0 으로 감춘다.
             const CUE = '.hive-subtitle-renderer-cue-window';
+            const VJS = '.vjs-text-track-display .vjs-text-track-cue';
+            const SUBS = {
+                disney: { key: '__hppSub2', def: 2.0, sel: CUE, root: () => document.querySelector('timed-text-override-region')?.shadowRoot },
+                vjs: { key: '__hppSubVjs', def: 1.0, sel: VJS, root: () => document.querySelector('.vjs-text-track-display') ? document : null },
+                // 웨이브(2026-11-13 실측): 글자 자막이 있는 작품만 .subtitle-wrap .subtitle-box > span(2.5vw)에 그린다.
+                // 영상에 박힌 자막(외국 드라마 등)은 페이지에 글자가 없어 읽을 수 없다. 흔한 이름이라 웨이브 주소에서만 쓴다
+                wavve: { key: '__hppSubWavve', def: 1.0, sel: '.subtitle-wrap .subtitle-box',
+                         root: () => /(^|\.)wavve\.com$/.test(location.hostname) && document.querySelector('.subtitle-wrap') ? document : null },
+            };
+            const subKind = () => Object.keys(SUBS).find(k => SUBS[k].root());
+            const zoomOf = k => parseFloat(localStorage.getItem(SUBS[k].key)) || SUBS[k].def;
             const applySub = () => {
-                const root = document.querySelector('timed-text-override-region')?.shadowRoot;
-                if (!root) return;
-                const z = parseFloat(localStorage.getItem('__hppSub2')) || 2.0;
+                const k = subKind();
+                if (!k) return;
+                const { sel } = SUBS[k], root = SUBS[k].root(), z = zoomOf(k);
                 const color = localStorage.getItem('__hppSubColor') || '';
                 const font = localStorage.getItem('__hppSubFont') || '';
-                let css = CUE + '{transform:scale(' + z + ')!important;transform-origin:50% 100%!important' + (window.__hppSubBelow ? ';opacity:0!important' : '') + '}';
-                if (/^#[0-9a-fA-F]{6}$/.test(color)) css += CUE + ',' + CUE + ' *{color:' + color + '!important}';
-                if (/^[\p{L}\p{N} -]{1,60}$/u.test(font)) css += CUE + ',' + CUE + ' *{font-family:""' + font + '"",sans-serif!important}';
-                let t = root.getElementById('__hpp_sub_shadow');
-                if (!t) { t = document.createElement('style'); t.id = '__hpp_sub_shadow'; root.appendChild(t); }
+                let css = sel + '{transform:scale(' + z + ')!important;transform-origin:50% 100%!important' + (window.__hppSubBelow ? ';opacity:0!important' : '') + '}';
+                if (/^#[0-9a-fA-F]{6}$/.test(color)) css += sel + ',' + sel + ' *{color:' + color + '!important}';
+                if (/^[\p{L}\p{N} -]{1,60}$/u.test(font)) css += sel + ',' + sel + ' *{font-family:""' + font + '"",sans-serif!important}';
+                const host = root === document ? document.head : root;
+                if (!host) return;
+                let t = host.querySelector('#__hpp_sub_shadow');
+                if (!t) { t = document.createElement('style'); t.id = '__hpp_sub_shadow'; host.appendChild(t); }
                 if (t.textContent !== css) t.textContent = css;
             };
             window.__hppApplySub = applySub;
+            // 호스트가 부른다: 지금 사이트의 배율을 한 단계(0.2) 바꾸고 새 값을 돌려준다. 자막 구조를 못 찾으면 빈 문자열
+            window.__hppSubStep = d => {
+                const k = subKind();
+                if (!k) return '';
+                const z = Math.min(4, Math.max(0.6, Math.round((zoomOf(k) + d * 0.2) * 10) / 10));
+                localStorage.setItem(SUBS[k].key, String(z));
+                applySub();
+                return z.toFixed(1);
+            };
             let lastSub = null;
             setInterval(() => {
                 if (!window.__hppSubBelow || !window.chrome?.webview) { lastSub = null; return; }
-                const root = document.querySelector('timed-text-override-region')?.shadowRoot;
-                const text = root ? [...root.querySelectorAll(CUE)].map(e => (e.innerText || e.textContent || '').trim()).filter(Boolean).join('\n') : '';
+                const k = subKind(), root = k && SUBS[k].root();
+                const text = root ? [...root.querySelectorAll(SUBS[k].sel)].map(e => (e.innerText || e.textContent || '').trim()).filter(Boolean).join('\n') : '';
                 if (text !== lastSub) { lastSub = text; window.chrome.webview.postMessage('hppsub:' + text); }
             }, 200);
             // 가장 큰 video 의 원본 크기를 호스트에 알린다(PIP 창 높이를 영상 비율에 맞추는 데 쓴다). 바뀔 때만 보낸다.
@@ -768,9 +793,7 @@ public partial class MainWindow : Window
 
     // ───────── 자막 크기 ─────────
 
-    private double _ottSubScale = 2.0; // 웹뷰(OttViewportScript 기본값과 같아야 한다)
-
-    // 현재 보이는 화면에 맞춰 자막 크기를 바꾼다: mpv 는 sub-scale ±0.1, 웹뷰는 zoom ±0.2
+    // 현재 보이는 화면에 맞춰 자막 크기를 바꾼다: mpv 는 sub-scale ±0.1, 웹뷰는 페이지가 사이트별로 기억하는 배율 ±0.2
     private async void AdjustSubtitle(int dir)
     {
         if (StripWanted) // PIP 아래 자막 줄이 켜져 있으면 그 글자 크기를 바꾼다(±2)
@@ -783,16 +806,15 @@ public partial class MainWindow : Window
         }
         if (DrmWebView.Visibility == Visibility.Visible)
         {
-            _ottSubScale = Math.Clamp(Math.Round(_ottSubScale + dir * 0.2, 1), 0.8, 4.0);
-            SetStatus($"자막 크기 ×{_ottSubScale:0.0}");
             if (_closing || DrmWebView.CoreWebView2 == null) return;
-            string z = _ottSubScale.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture);
             try
             {
-                await DrmWebView.CoreWebView2.ExecuteScriptAsync(
-                    $"localStorage.setItem('__hppSub2','{z}'); window.__hppApplySub && window.__hppApplySub();");
+                string json = await DrmWebView.CoreWebView2.ExecuteScriptAsync(
+                    $"window.__hppSubStep ? window.__hppSubStep({(dir > 0 ? 1 : -1)}) : ''");
+                string z = JsonSerializer.Deserialize<string>(json) ?? "";
+                SetStatus(z.Length > 0 ? $"자막 크기 ×{z}" : "이 화면에서는 자막 크기를 바꿀 수 없습니다");
             }
-            catch (Exception) { /* 페이지 전환 중 — 다음 1초 주기에 반영 */ }
+            catch (Exception) { /* 페이지 전환 중 */ }
         }
         else
         {

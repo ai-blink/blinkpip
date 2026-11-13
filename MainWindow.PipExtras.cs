@@ -141,7 +141,12 @@ public partial class MainWindow
 
     // ───────── 웹뷰(디즈니+) 자막 설정 전달 ─────────
 
-    // 페이지(OttViewportScript)가 보내는 메시지: "hppsub:<자막 글자>"(디즈니+), "hppaspect:<W>x<H>"(넷플릭스·디즈니+ 영상 원본 크기)
+    // 자막 구조를 실측해 OttViewportScript 가 읽을 수 있게 한 사이트
+    private static readonly string[] SubtitleReadHosts = { "disneyplus.com", "coupangplay.com", "wavve.com" };
+    // 영상 원본 크기를 받아 PIP 높이를 맞추는 사이트(재생 화면에서 가장 큰 video 가 본편임을 실측)
+    private static readonly string[] AspectHosts = { "netflix.com", "disneyplus.com", "coupangplay.com", "wavve.com" };
+
+    // 페이지(OttViewportScript)가 보내는 메시지: "hppsub:<자막 글자>"(SubtitleReadHosts), "hppaspect:<W>x<H>"(AspectHosts 영상 원본 크기)
     private void HookOttMessages(CoreWebView2 web)
     {
         web.NavigationCompleted += (_, _) => PushOttSubConfig(); // 새 문서는 window 값이 비어 있다
@@ -150,14 +155,13 @@ public partial class MainWindow
             string? msg;
             try { msg = e.TryGetWebMessageAsString(); } catch (ArgumentException) { return; }
             if (msg == null || _engineA || !Uri.TryCreate(e.Source, UriKind.Absolute, out var src)) return;
-            bool disney = HostIs(src, "disneyplus.com");
-            if (msg.StartsWith("hppsub:", StringComparison.Ordinal) && disney)
+            if (msg.StartsWith("hppsub:", StringComparison.Ordinal) && SubtitleReadHosts.Any(d => HostIs(src, d)))
             {
                 string text = msg.Substring(7);
                 if (text.Length > 500) text = text.Substring(0, 500);
                 SetStripText(text);
             }
-            else if (msg.StartsWith("hppaspect:", StringComparison.Ordinal) && (disney || HostIs(src, "netflix.com")))
+            else if (msg.StartsWith("hppaspect:", StringComparison.Ordinal) && AspectHosts.Any(d => HostIs(src, d)))
                 OnWebVideoSize(msg.Substring(10));
         };
     }
