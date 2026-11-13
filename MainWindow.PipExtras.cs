@@ -144,7 +144,7 @@ public partial class MainWindow
     // 자막 구조를 실측해 OttViewportScript 가 읽을 수 있게 한 사이트
     private static readonly string[] SubtitleReadHosts = { "disneyplus.com", "coupangplay.com", "wavve.com" };
     // 영상 원본 크기를 받아 PIP 높이를 맞추는 사이트(재생 화면에서 가장 큰 video 가 본편임을 실측)
-    private static readonly string[] AspectHosts = { "netflix.com", "disneyplus.com", "coupangplay.com", "wavve.com" };
+    private static readonly string[] AspectHosts = { "netflix.com", "disneyplus.com", "coupangplay.com", "wavve.com", "tving.com" };
 
     // 페이지(OttViewportScript)가 보내는 메시지: "hppsub:<자막 글자>"(SubtitleReadHosts), "hppaspect:<W>x<H>"(AspectHosts 영상 원본 크기)
     private void HookOttMessages(CoreWebView2 web)
@@ -190,7 +190,8 @@ public partial class MainWindow
         if (_closing || _webInit is not { IsCompletedSuccessfully: true, Result: true } || DrmWebView.CoreWebView2 == null) return;
         string js = "try{localStorage.setItem('__hppSubColor'," + JsonSerializer.Serialize(_settings.SubColor) + ");" +
                     "localStorage.setItem('__hppSubFont'," + JsonSerializer.Serialize(_settings.SubFont) + ");}catch(e){}" +
-                    "window.__hppSubBelow=" + (StripWanted ? "true" : "false") + ";window.__hppApplySub&&window.__hppApplySub();";
+                    "window.__hppSubBelow=" + (StripWanted ? "true" : "false") + ";window.__hppApplySub&&window.__hppApplySub();" +
+                    "window.__hppPip=" + (_isPipMode ? "true" : "false") + ";window.__hppApplyFill&&window.__hppApplyFill();"; // PIP 에서 플레이어를 창 전체로
         try { await DrmWebView.CoreWebView2.ExecuteScriptAsync(js); }
         catch (Exception) { /* 페이지 전환 중 — NavigationCompleted 에서 다시 보낸다 */ }
     }

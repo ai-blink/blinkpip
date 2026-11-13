@@ -83,8 +83,39 @@ public partial class MainWindow : Window
                 const s = v ? v.videoWidth + 'x' + v.videoHeight : '0x0';
                 if (s !== lastAspect) { lastAspect = s; window.chrome.webview.postMessage('hppaspect:' + s); }
             };
+            // PIP 에서 플레이어가 창을 채우지 않는 사이트(티빙 라이브 2026-11-13 실측: 고정 머리글 아래 556x312 플레이어 + 긴 채널 목록)는
+            // 영상과 크기가 같은 가장 바깥 조상(= 플레이어 상자, 사이트 컨트롤·자막 포함)을 창 전체로 띄운다. 이미 창의 90% 이상을
+            // 채우는 플레이어(넷플릭스·디즈니+)는 건드리지 않는다. __hppPip 는 호스트가 PIP 진입·종료 때 넣는다.
+            const FILL = '__hpp_fill';
+            const fillPip = () => {
+                const old = document.querySelector('.' + FILL);
+                if (!window.__hppPip) {
+                    old?.classList.remove(FILL);
+                    document.getElementById('__hpp_fill_css')?.remove();
+                    return;
+                }
+                const v = [...document.querySelectorAll('video')].filter(x => x.videoWidth > 0)
+                    .sort((a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight)[0];
+                if (!v || (old && old.contains(v))) return;
+                old?.classList.remove(FILL);
+                const vr = v.getBoundingClientRect();
+                if (vr.width * vr.height >= innerWidth * innerHeight * 0.9) return;
+                const same = r => Math.abs(r.left - vr.left) < 3 && Math.abs(r.top - vr.top) < 3 && Math.abs(r.width - vr.width) < 3 && Math.abs(r.height - vr.height) < 3;
+                let root = v;
+                for (let e = v.parentElement; e && e !== document.body; e = e.parentElement) { if (!same(e.getBoundingClientRect())) break; root = e; }
+                root.classList.add(FILL);
+                if (!document.getElementById('__hpp_fill_css') && document.head) {
+                    const s = document.createElement('style');
+                    s.id = '__hpp_fill_css';
+                    s.textContent = '.' + FILL + '{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;margin:0!important;z-index:2147483646!important;background:#000!important}' +
+                        'video.' + FILL + '{object-fit:contain!important}html,body{overflow:hidden!important}';
+                    document.head.appendChild(s);
+                }
+            };
+            window.__hppApplyFill = fillPip;
             const apply = () => {
                 applySub();
+                fillPip();
                 reportAspect();
                 const watching = /\/(watch|play|video)(\/|$)/.test(location.pathname);
                 let s = document.getElementById('__hpp_style');
