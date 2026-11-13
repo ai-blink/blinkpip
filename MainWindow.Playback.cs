@@ -72,6 +72,7 @@ public partial class MainWindow
         Grid.SetRow(ControlRow, top ? 1 : 3);
         ControlRow.BorderThickness = top ? new Thickness(0, 0, 0, 1) : new Thickness(0, 1, 0, 0);
         BookmarkRowBorder.Visibility = _settings.ShowBookmarks ? Visibility.Visible : Visibility.Collapsed;
+        if (!_isPipMode && !_isWallpaperMode) ControlBarRow.Height = new GridLength(NormalBarHeight); // 목록 줄을 끄면 빈 칸이 남지 않게
     }
 
     // mpv 쪽 설정(언어, 자막 크기, 장치, 화질, 이퀄라이저)

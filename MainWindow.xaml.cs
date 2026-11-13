@@ -119,7 +119,9 @@ public partial class MainWindow : Window
 
     private const int SnapPx = 25;           // 모니터 가장자리 자석 스냅 거리(px)
     private const int SnapMarginPx = 12;     // 스냅/PIP 배치 시 남기는 여백(px)
-    private const int ControlBarHeight = 38; // DIP
+    private const int UrlRowHeight = 38, BookmarkRowHeight = 28; // DIP — MainWindow.xaml 의 UrlRowDef·BookmarkRowBorder 높이와 같아야 한다
+    // 일반 창의 상단 바 높이: 주소 줄 + (켜져 있으면) 사이트 목록 줄. PIP·배경화면에서 돌아올 때와 설정을 바꿀 때 쓴다
+    private double NormalBarHeight => UrlRowHeight + (_settings.ShowBookmarks ? BookmarkRowHeight : 0);
     private const int PipStripHeight = 0;    // PIP 상단 띠(DIP). 0 = 영상이 꽉 차게(이동·우클릭 복귀는 마우스 훅이 영상 위에서 처리)
 
     private IntPtr _hwnd;
@@ -483,7 +485,7 @@ public partial class MainWindow : Window
         HidePipControls();
         UpdateTimer();
         if (_isClickThrough) SetClickThroughMode(false);
-        ControlBarRow.Height = new GridLength(ControlBarHeight);
+        ControlBarRow.Height = new GridLength(NormalBarHeight);
         BarContent.Visibility = Visibility.Visible;
         ControlRow.Visibility = Visibility.Visible;
         SetResourceReference(BackgroundProperty, "BarBrush");
@@ -692,7 +694,7 @@ public partial class MainWindow : Window
         NativeMethods.SetParent(_hwnd, IntPtr.Zero);
         NativeMethods.SetWindowLong(_hwnd, NativeMethods.GWL_STYLE, _wallStyleBackup);
         RootGrid.Margin = new Thickness(6);
-        ControlBarRow.Height = new GridLength(ControlBarHeight);
+        ControlBarRow.Height = new GridLength(NormalBarHeight);
         RestoreRect(_wallRestore, NativeMethods.SWP_FRAMECHANGED);
         _mpv?.SetLoop(false);
         if (_autoPaused) { _autoPaused = false; _mpv?.SetPause(false); } // 풀스크린 앱 때문에 멈춘 채로 남지 않게
