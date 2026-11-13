@@ -9,7 +9,7 @@ namespace blinkpip;
 //  · 재생 컨트롤(PipControls) — PIP 에서는 아래 재생 줄을 접고, 커서가 PIP 위에 있을 때만 영상 아래쪽 안에 띄운다.
 //    엔진 A(mpv)만. 웹뷰(넷플릭스·디즈니+)는 사이트 자체 컨트롤이 같은 자리에 뜨므로 띄우지 않는다.
 //  · 자막 줄(SubtitleStrip) — 설정 "PIP 자막을 창 아래에"가 켜져 있으면 영상 안 자막을 숨기고 PIP 바로 아래에 글자로 보여 준다.
-//    mpv 는 sub-text, 디즈니+ 는 페이지의 자막 요소 글자를 읽어 온다(OttViewportScript → postMessage "hppsub:").
+//    mpv 는 sub-text, 웹뷰(디즈니+·쿠팡플레이·웨이브·넷플릭스)는 페이지의 자막 요소 글자를 읽어 온다(OttViewportScript → postMessage "hppsub:").
 // 표시/숨김 판정은 OverlayTick(자물쇠 버튼과 같은 150ms 타이머)이 하고, 위치는 창 이동·크기 변경 때 다시 잡는다.
 public partial class MainWindow
 {
@@ -142,7 +142,7 @@ public partial class MainWindow
     // ───────── 웹뷰(디즈니+) 자막 설정 전달 ─────────
 
     // 자막 구조를 실측해 OttViewportScript 가 읽을 수 있게 한 사이트
-    private static readonly string[] SubtitleReadHosts = { "disneyplus.com", "coupangplay.com", "wavve.com" };
+    private static readonly string[] SubtitleReadHosts = { "disneyplus.com", "coupangplay.com", "wavve.com", "netflix.com" };
     // 영상 원본 크기를 받아 PIP 높이를 맞추는 사이트(재생 화면에서 가장 큰 video 가 본편임을 실측)
     private static readonly string[] AspectHosts = { "netflix.com", "disneyplus.com", "coupangplay.com", "wavve.com", "tving.com" };
 

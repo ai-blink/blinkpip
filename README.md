@@ -19,7 +19,7 @@ WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 
 | A: libmpv | 로컬 영상, 유튜브 등 | `libmpv-2.dll` + `yt-dlp` + SponsorBlock(Lua) |
 | B: WebView2 | 넷플릭스, 디즈니+ 등 DRM OTT | Edge WebView2, 영구 프로필(`blinkpip_WebView2`)로 로그인 유지 |
 
-`MainWindow.xaml.cs`의 `WebEngineHosts`(넷플릭스·디즈니+·티빙·Apple TV(`tv.apple.com`)·왓챠·쿠팡플레이·웨이브·라프텔·프라임 비디오, 서브도메인 포함)만 엔진 B로 가고, 나머지 URL·파일 경로는 엔진 A로 간다. 사이트 안 링크 이동은 웹뷰 안에 머문다. 자막 크기·창 아래 자막 줄은 디즈니+·쿠팡플레이·웨이브, PIP 비율 맞춤은 여기에 넷플릭스·티빙을 더한 다섯 곳에 맞춰져 있다(사이트별 자막 구조는 아래 "자막 크기"). 웨이브는 자막이 영상에 박힌 작품(외국 드라마 등)이 많고, 그런 작품의 자막은 바꾸거나 읽을 수 없다.
+`MainWindow.xaml.cs`의 `WebEngineHosts`(넷플릭스·디즈니+·티빙·Apple TV(`tv.apple.com`)·왓챠·쿠팡플레이·웨이브·라프텔·프라임 비디오, 서브도메인 포함)만 엔진 B로 가고, 나머지 URL·파일 경로는 엔진 A로 간다. 사이트 안 링크 이동은 웹뷰 안에 머문다. 자막 크기·창 아래 자막 줄은 디즈니+·쿠팡플레이·웨이브·넷플릭스, PIP 비율 맞춤은 여기에 티빙을 더한 다섯 곳에 맞춰져 있다(사이트별 자막 구조는 아래 "자막 크기"). 웨이브는 자막이 영상에 박힌 작품(외국 드라마 등)이 많고, 그런 작품의 자막은 바꾸거나 읽을 수 없다.
 
 **치지직**(`ChzzkRoute.cs`, 2026-11-13 실측): yt-dlp는 생방송 `/live/<채널>`과 다시보기 `/video/<번호>`만 알아본다. 그래서 채널 홈 `/<채널 32자리>`은 생방송 주소로 바꿔 엔진 A로 열고, 클립 등 나머지 치지직 페이지는 엔진 B(웹 화면, DRM 없음)로 연다. 웹 화면에서 둘러보다가 생방송·다시보기 페이지에서 PIP를 켜면 그 주소를 엔진 A로 넘겨 영상만 담는다(웹 페이지째 줄어들지 않게). PIP를 나오면 그 페이지를 웹 화면으로 다시 연다(새로 불러오므로 방송·채팅은 새로 연결). PIP 중 다른 영상을 열었으면 돌아가지 않는다. 19세 방송은 로그인 정보가 엔진 A로 넘어가지 않아 열리지 않을 수 있다.
 
@@ -145,7 +145,7 @@ mpv 화면에서는 `Ctrl+↑/↓`(영상 창 포커스)로도 자막 크기를 
 
 **PIP 재생 컨트롤**: PIP에서는 아래 재생 줄을 접는다. 엔진 A(로컬·mpv)는 커서가 PIP 위에 있을 때만 영상 아래쪽 안에 재생·탐색·음소거 컨트롤(`PipControls`, 별도 최상위 창)이 뜨고, 커서가 벗어난 뒤 설정의 "컨트롤 사라지는 시간"(기본 2초)이 지나면 자물쇠와 함께 사라진다. 웹뷰(넷플릭스·디즈니+)는 사이트 자체 컨트롤이 같은 자리에 떠서 띄우지 않는다. 잠그면 컨트롤도 뜨지 않는다.
 
-**PIP 아래 자막 줄**: 설정 → PIP → "자막을 창 아래에 표시"(기본 켬)이면 PIP에서 영상 안 자막을 숨기고 창 바로 아래(공간이 없으면 바로 위) 줄에 글자로 보여 준다(`SubtitleStrip`, 마우스 통과). mpv는 `sub-text`를, 웹뷰는 자막 요소 글자를 200ms마다 읽어 `postMessage("hppsub:…")`로 받는다(`MainWindow.PipExtras.cs`의 `SubtitleReadHosts` = 디즈니+·쿠팡플레이·웨이브 출처만 받음, 500자 제한). PIP에 들어갈 때 우하단 기본 위치면 줄이 들어갈 만큼 창을 올린다. 이때 `Ctrl+Alt+↑/↓`는 줄 글자 크기(10~40, ±2)를 바꾼다. 이미지 자막은 글자가 없어 줄에 보이지 않는다. 넷플릭스는 아직 대상이 아니다.
+**PIP 아래 자막 줄**: 설정 → PIP → "자막을 창 아래에 표시"(기본 켬)이면 PIP에서 영상 안 자막을 숨기고 창 바로 아래(공간이 없으면 바로 위) 줄에 글자로 보여 준다(`SubtitleStrip`, 마우스 통과). mpv는 `sub-text`를, 웹뷰는 자막 요소 글자를 200ms마다 읽어 `postMessage("hppsub:…")`로 받는다(`MainWindow.PipExtras.cs`의 `SubtitleReadHosts` = 디즈니+·쿠팡플레이·웨이브·넷플릭스 출처만 받음, 500자 제한). PIP에 들어갈 때 우하단 기본 위치면 줄이 들어갈 만큼 창을 올린다. 이때 `Ctrl+Alt+↑/↓`는 줄 글자 크기(10~40, ±2)를 바꾼다. 이미지 자막은 글자가 없어 줄에 보이지 않는다.
 
 **웹 영상 PIP 비율 맞춤**: 넷플릭스·디즈니+·쿠팡플레이·웨이브·티빙(`AspectHosts`) 페이지가 가장 큰 `video`의 원본 크기(`videoWidth×videoHeight`)를 1초마다 확인해 바뀔 때만 `postMessage("hppaspect:WxH")`로 보낸다. PIP에서는 이 비율로 너비를 유지한 채 창 높이를 맞춰 위아래 검은 띠를 없앤다(가장자리 끌기도 같은 비율 유지). 일반 창은 사이트 목록 화면도 보여 주므로 맞추지 않는다. 재생 화면을 벗어나면 `0x0`을 보내 맞춤을 멈춘다.
 
@@ -153,7 +153,7 @@ mpv 화면에서는 `Ctrl+↑/↓`(영상 창 포커스)로도 자막 크기를 
 
 **자막 글꼴·색**: 설정 → 오디오·자막. mpv(`sub-font`, `sub-color`), 웹뷰 자막(`color`·`font-family` `!important`), PIP 아래 자막 줄에 함께 적용한다.
 
-**자막 크기(웹뷰)**: `OttViewportScript`의 `SUBS` 표가 사이트별 자막 요소를 정한다(2026-11-13 실측) — 디즈니+ = `timed-text-override-region` shadow root 안 `.hive-subtitle-renderer-cue-window`(기본 ×2.0), 쿠팡플레이 = video.js `.vjs-text-track-display .vjs-text-track-cue`(×1.0), 웨이브 = `.subtitle-wrap .subtitle-box`(×1.0, 웨이브 주소에서만). 자막 상자를 아래 가운데 기준 `transform:scale`로 키운다. 배율은 사이트 `localStorage`에 따로 저장되고, `Ctrl+Alt+↑/↓`는 페이지의 `__hppSubStep(±1)`을 불러 0.2씩(0.6~4.0) 바꾼다. ASS 자막은 `sub-ass-override=scale`이라 원래 스타일을 유지한다.
+**자막 크기(웹뷰)**: `OttViewportScript`의 `SUBS` 표가 사이트별 자막 요소를 정한다(2026-11-13 실측) — 디즈니+ = `timed-text-override-region` shadow root 안 `.hive-subtitle-renderer-cue-window`(기본 ×2.0), 쿠팡플레이 = video.js `.vjs-text-track-display .vjs-text-track-cue`(×1.0), 웨이브 = `.subtitle-wrap .subtitle-box`(×1.0, 웨이브 주소에서만), 넷플릭스 = `.player-timedtext .player-timedtext-text-container`(×1.0, 2026-11-14 실측). 자막 상자를 아래 가운데 기준 `transform:scale`로 키운다. 배율은 사이트 `localStorage`에 따로 저장되고, `Ctrl+Alt+↑/↓`는 페이지의 `__hppSubStep(±1)`을 불러 0.2씩(0.6~4.0) 바꾼다. ASS 자막은 `sub-ass-override=scale`이라 원래 스타일을 유지한다.
 
 **PIP 잠금·나가기 버튼**: 커서가 PIP 위에 있으면 PIP 창 **바깥** 왼쪽 위 모서리 바로 위에 자물쇠 버튼(🔓/🔒)과 그 오른쪽 PIP 나가기 버튼(⧉, `Ctrl+Alt+P`와 같음, 잠겨 있어도 동작)이 뜨고(영상·자막을 가리지 않음),
 커서가 PIP와 버튼을 모두 벗어난 뒤 설정의 "컨트롤 사라지는 시간"(기본 2초)이 지나면 사라진다. 위쪽 화면 공간이 모자라면 아래쪽, 둘 다 없으면 창 안쪽 왼쪽 위에 뜬다.

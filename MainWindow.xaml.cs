@@ -39,6 +39,9 @@ public partial class MainWindow : Window
                 // 영상에 박힌 자막(외국 드라마 등)은 페이지에 글자가 없어 읽을 수 없다. 흔한 이름이라 웨이브 주소에서만 쓴다
                 wavve: { key: '__hppSubWavve', def: 1.0, sel: '.subtitle-wrap .subtitle-box',
                          root: () => /(^|\.)wavve\.com$/.test(location.hostname) && document.querySelector('.subtitle-wrap') ? document : null },
+                // 넷플릭스(2026-11-14 실측): 글자 자막은 .player-timedtext > .player-timedtext-text-container > span(인라인 px) 에 그린다
+                netflix: { key: '__hppSubNetflix', def: 1.0, sel: '.player-timedtext-text-container',
+                           root: () => document.querySelector('.player-timedtext') ? document : null },
             };
             const subKind = () => Object.keys(SUBS).find(k => SUBS[k].root());
             const zoomOf = k => parseFloat(localStorage.getItem(SUBS[k].key)) || SUBS[k].def;
