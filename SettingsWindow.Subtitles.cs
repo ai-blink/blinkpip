@@ -33,6 +33,8 @@ public partial class SettingsWindow
         SubTtsPitchText.Text = $"{_s.SubTtsPitch:0.00}";
         SubTtsVolumeSlider.Value = _s.SubTtsVolume;
         SubTtsVolumeText.Text = $"{_s.SubTtsVolume * 100:0}%";
+        SubTtsGpuToggle.IsChecked = _s.SubTtsGpu;
+        UpdateSubTtsGpu();
         UpdateSubTtsModel();
         HookSubTtsModel();
         UpdateSubStyleLabels();
@@ -85,6 +87,22 @@ public partial class SettingsWindow
         _s.SubTtsVolume = Math.Round(SubTtsVolumeSlider.Value, 2);
         SubTtsVolumeText.Text = $"{_s.SubTtsVolume * 100:0}%";
         Changed(nameof(AppSettings.SubTtsVolume));
+    }
+
+    private void UpdateSubTtsGpu()
+    {
+        string now = SubtitleSpeaker.GpuActive ? "지금 GPU 로 합성 중." : "지금 CPU 로 합성 중.";
+        if (!SubtitleSpeaker.GpuFilesReady) now += " GPU 파일이 없습니다(" + SubtitleSpeaker.GpuDir + ").";
+        else if (_s.SubTtsGpu != SubtitleSpeaker.GpuActive) now += " 앱을 다시 켜면 바뀝니다.";
+        SubTtsGpuText.Text = now;
+    }
+
+    private void SubTtsGpu_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        _s.SubTtsGpu = SubTtsGpuToggle.IsChecked == true;
+        Changed(nameof(AppSettings.SubTtsGpu));
+        UpdateSubTtsGpu();
     }
 
     private void SubTts_Changed(object sender, RoutedEventArgs e)

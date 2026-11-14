@@ -70,14 +70,25 @@ public partial class MainWindow : Window
                 applySub();
                 return z.toFixed(1);
             };
-            let lastSub = null;
-            setInterval(() => {
+            let lastSub = null, subQueued = false;
+            const checkSub = () => {
+                subQueued = false;
                 // __hppSubRead = 호스트의 '자막 읽어 주기'. 이때는 자막을 감추지 않고 글자만 보낸다
                 if (!(window.__hppSubBelow || window.__hppSubRead) || !window.chrome?.webview) { lastSub = null; return; }
                 const k = subKind(), root = k && SUBS[k].root();
                 const text = root ? [...root.querySelectorAll(SUBS[k].sel)].map(e => (e.innerText || e.textContent || '').trim()).filter(Boolean).join('\n') : '';
                 if (text !== lastSub) { lastSub = text; window.chrome.webview.postMessage('hppsub:' + text); }
-            }, 200);
+            };
+            // 자막 글자가 바뀌면 바로 확인한다(다음 그리기 순간에 한 번). 200ms 확인은 예비 — shadow root(디즈니+) 안 변화는 관찰에 안 잡힌다
+            setInterval(checkSub, 200);
+            const subObs = new MutationObserver(() => {
+                if (subQueued || !(window.__hppSubBelow || window.__hppSubRead)) return;
+                subQueued = true; requestAnimationFrame(checkSub);
+            });
+            const startSubObs = () => document.documentElement
+                ? subObs.observe(document.documentElement, { childList: true, subtree: true, characterData: true })
+                : setTimeout(startSubObs, 50);
+            startSubObs();
             // 가장 큰 video 의 원본 크기를 호스트에 알린다(PIP 창 높이를 영상 비율에 맞추는 데 쓴다). 바뀔 때만 보낸다.
             let lastAspect = null;
             const reportAspect = () => {

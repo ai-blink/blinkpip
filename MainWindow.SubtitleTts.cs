@@ -13,6 +13,7 @@ public partial class MainWindow
 
     private void InitSubtitleTts()
     {
+        SubtitleSpeaker.ChooseNative(_settings.SubTtsGpu); // sherpa-onnx 를 처음 부르기 전에 CPU·GPU 판을 고른다
         if (_mpv != null)
             _mpv.SubtitleSample += s =>
             {
@@ -46,8 +47,10 @@ public partial class MainWindow
         if (!_settings.SubTts) _speaker?.Stop();
         else
         {
+            _speaker ??= new SubtitleSpeaker();
             ConfigureSpeaker();
             EnsureTtsModel();
+            _speaker.Warm(); // 첫 줄을 기다리지 않게 모델을 미리 불러 둔다
         }
         _lastTtsMpv = null; // 켜는 순간 지금 줄부터 읽게
         _lockOverlay?.SetSpeech(_settings.SubTts);
@@ -58,7 +61,7 @@ public partial class MainWindow
     private async void EnsureTtsModel()
     {
         if (!_settings.SubTtsVoice.StartsWith("st:", StringComparison.Ordinal) || SubtitleSpeaker.ModelReady) return;
-        try { await SubtitleSpeaker.EnsureModelAsync(); }
+        try { await SubtitleSpeaker.EnsureModelAsync(); _speaker?.Warm(); }
         catch (Exception) { /* 설정 창에 실패 문구가 뜬다. 다음에 켜거나 목소리를 고를 때 다시 시도 */ }
     }
 
