@@ -223,7 +223,7 @@ public sealed class SubtitleSpeaker : IDisposable
             {
                 byte[]? wav = await Task.Run(() => SynthesizeSupertonic(text, sid, boost, () => g == _gen && !job.Dropped));
                 Log($"#{id} 합성 {sw.ElapsedMilliseconds}ms " + (wav == null ? "취소됨" : $"{(wav.Length - 44) / 2}표본"));
-                if (wav != null) LearnPace(text, wav, _rate * boost); // await 뒤라 UI 스레드다
+                if (wav != null) { LearnPace(text, wav, _rate * boost); KeepClip(id, text, wav); } // await 뒤라 UI 스레드다
                 return wav == null ? null : MediaSource.CreateFromStream(new MemoryStream(wav).AsRandomAccessStream(), "audio/wav");
             }
             _synth.Options.SpeakingRate = Math.Clamp(_rate * boost, 0.5, 6.0);
@@ -339,6 +339,28 @@ public sealed class SubtitleSpeaker : IDisposable
         _busyUntil = _lastArrival = DateTime.MinValue;
         _player.Pause();
         _playDone?.TrySetResult();
+    }
+
+    // 최근에 읽은 소리를 ClipDir 에 남긴다(파일 이름 = 앱 시작 시각_줄 번호, 옆 .txt 에 글자). 끊겨 들릴 때 소리 자체가 잘렸는지
+    // 재생에서 끊겼는지 가르려고(2026-11-15 — 기록상 모두 끝까지 재생됐는데 사용자에게는 끊겨 들림). 가장 최근 KeepClips 개만 둔다
+    private const int KeepClips = 30;
+    private static readonly string ClipDir = AppPaths.DataFile("tts-clips");
+    private static readonly string RunTag = DateTime.Now.ToString("HHmmss");
+    private static void KeepClip(int id, string text, byte[] wav)
+    {
+        try
+        {
+            Directory.CreateDirectory(ClipDir);
+            string b = Path.Combine(ClipDir, $"{RunTag}_{id:0000}");
+            File.WriteAllBytes(b + ".wav", wav);
+            File.WriteAllText(b + ".txt", DateTime.Now.ToString("HH:mm:ss.fff") + " " + text);
+            foreach (var old in new DirectoryInfo(ClipDir).GetFiles("*.wav").OrderByDescending(f => f.LastWriteTimeUtc).Skip(KeepClips))
+            {
+                old.Delete();
+                File.Delete(Path.ChangeExtension(old.FullName, ".txt"));
+            }
+        }
+        catch (Exception) { /* 진단용이라 실패해도 읽기는 계속 */ }
     }
 
     // ── 진단 기록 ── 자막이 빠지는 원인을 찾으려고 남긴다(%LOCALAPPDATA%/blinkpip/tts-log.txt, 512KB 넘으면 새로 시작)

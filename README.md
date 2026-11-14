@@ -183,7 +183,7 @@ mpv 화면에서는 `Ctrl+↑/↓`(영상 창 포커스)로도 자막 크기를 
 `내 사진\blinkpip\` — 스크린샷 저장 폴더(OneDrive로 리디렉션된 PC에서는 OneDrive 사진 폴더 아래).
 `%LocalAppData%\blinkpip_WebView2\` — WebView2 프로필(로그인 유지).
 `%LocalAppData%\blinkpip\tts\` — 자막 읽어 주기 목소리 모델(Supertonic 3, 자동으로 받음).
-`%LocalAppData%\blinkpip\tts-gpu\` — GPU로 합성할 때 쓰는 sherpa-onnx CUDA 판·CUDA DLL(직접 넣음). `tts-log.txt` — 자막 읽기 진단 기록.
+`%LocalAppData%\blinkpip\tts-gpu\` — GPU로 합성할 때 쓰는 sherpa-onnx CUDA 판·CUDA DLL(직접 넣음). `tts-log.txt` — 자막 읽기 진단 기록. `tts-clips\` — 최근에 읽은 소리 30줄(WAV + 글자 .txt), 끊겨 들릴 때 소리 자체가 잘렸는지 가르는 용도.
 
 ## 설계 결정과 실측 기록
 
