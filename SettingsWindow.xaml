@@ -271,7 +271,7 @@
                             <Grid Style="{StaticResource Row}">
                                 <StackPanel HorizontalAlignment="Left">
                                     <TextBlock Text="자막 읽어 주기" Style="{StaticResource RowName}"/>
-                                    <TextBlock Text="자막을 소리로 읽습니다. 읽던 줄은 끝까지 읽고 다음 줄을 차례로 이어 읽습니다. 대사가 빠르면 자동으로 빠르게(최대 1.5배) 읽습니다. 로컬·유튜브 영상과 넷플릭스·디즈니+·쿠팡플레이·웨이브에 적용됩니다. 이미지 자막은 읽지 못합니다. PIP 왼쪽 위 소리 버튼으로도 켜고 끕니다." Style="{StaticResource RowHint}" MaxWidth="280"/>
+                                    <TextBlock Text="자막을 소리로 읽습니다. 읽던 줄은 끝까지 읽고 다음 줄을 차례로 이어 읽습니다. 대사가 빠르면 자동으로 빠르게(최대 1.25배) 읽습니다. 로컬·유튜브 영상과 넷플릭스·디즈니+·쿠팡플레이·웨이브에 적용됩니다. 이미지 자막은 읽지 못합니다. PIP 왼쪽 위 소리 버튼으로도 켜고 끕니다." Style="{StaticResource RowHint}" MaxWidth="280"/>
                                 </StackPanel>
                                 <CheckBox x:Name="SubTtsToggle" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" Checked="SubTts_Changed" Unchecked="SubTts_Changed"/>
                             </Grid>
@@ -320,7 +320,7 @@
                             <Grid Style="{StaticResource Row}">
                                 <StackPanel HorizontalAlignment="Left">
                                     <TextBlock Text="읽는 속도" Style="{StaticResource RowName}"/>
-                                    <TextBlock Text="가장 느린 빠르기입니다(기본 1.0). 대사가 빠르면 자동으로 최대 1.5배까지 올립니다." Style="{StaticResource RowHint}" MaxWidth="280"/>
+                                    <TextBlock Text="가장 느린 빠르기입니다(기본 1.0). 대사가 빠르면 자동으로 최대 1.25배까지 올립니다." Style="{StaticResource RowHint}" MaxWidth="280"/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                                     <Slider x:Name="SubTtsRateSlider" Style="{StaticResource PlayerSlider}" Width="170" Minimum="0.5" Maximum="3" TickFrequency="0.1" IsSnapToTickEnabled="True" ValueChanged="SubTtsRate_ValueChanged"/>

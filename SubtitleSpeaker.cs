@@ -131,7 +131,8 @@ public sealed class SubtitleSpeaker : IDisposable
     //  · 간격을 아직 모르면(처음 몇 줄) 밀린 줄 수로 정한다. MaxBacklog 줄보다 많이 밀리면 가장 오래된 줄부터 버린다.
     // 모든 상태는 UI 스레드에서만 만진다.
     private const int MaxBacklog = 3;
-    private const double MaxSpeed = 1.5, Fill = 0.9, SynthLead = 0.3; // SynthLead = 합성에 걸리는 대략 시간(초)
+    // MaxSpeed: 1.5 는 대사가 빽빽한 드라마에서 줄 대부분이 1.5 로 읽혀 말이 끊겨 들렸다 → 같은 대사 비교 청취로 1.25 를 골랐다(2026-11-15)
+    private const double MaxSpeed = 1.25, Fill = 0.9, SynthLead = 0.3; // SynthLead = 합성에 걸리는 대략 시간(초)
     private double _spc = 0.22;     // 1배속에서 한 글자(공백 뺌)에 걸리는 초 — 2026-11-14 기록 기준 시작값
     private double _gap;            // 최근 자막 사이 간격(초, 지수 평균). 0 = 아직 모름
     private DateTime _lastArrival = DateTime.MinValue, _busyUntil = DateTime.MinValue; // _busyUntil = 쌓인 말이 다 끝날 예상 시각

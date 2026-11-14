@@ -33,7 +33,7 @@ public sealed class AppSettings
     public string SubColor { get; set; } = "#FFFFFF";          // 자막 글자 색 #RRGGBB
     public bool SubTts { get; set; }                           // 자막 읽어 주기(윈도우 음성 합성)
     public string SubTtsVoice { get; set; } = SubtitleSpeaker.DefaultVoice; // "st:<화자>"(Supertonic 3) 또는 윈도우 목소리 표시 이름("" = 윈도우 기본)
-    public double SubTtsRate { get; set; } = 1.0;              // 말 속도 0.5~3.0 — 가장 느린 빠르기. 대화가 빠르면 자동으로 1.5배까지 올린다
+    public double SubTtsRate { get; set; } = 1.0;              // 말 속도 0.5~3.0 — 가장 느린 빠르기. 대화가 빠르면 자동으로 1.25배까지 올린다
     public double SubTtsPitch { get; set; } = 1.0;             // 높낮이 배율 0.8~1.25
     public double SubTtsVolume { get; set; } = 1.0;            // 크기 0.1~1.5 (윈도우 목소리는 1.0 까지)
     public bool SubTtsGpu { get; set; }                        // Supertonic 을 GPU(CUDA)로 합성 — 앱을 다시 켜야 적용(SubtitleSpeaker.ChooseNative)
