@@ -31,33 +31,58 @@ public sealed class SubtitleSpeaker : IDisposable
     public static bool ModelReady => ModelFiles.All(f => File.Exists(Path.Combine(ModelDir, f)));
 
     // ── GPU(CUDA) ── 설정 «GPU로 합성». GpuDir 에 sherpa-onnx CUDA 판과 CUDA 13·cuDNN 9 DLL 이 있어야 한다(앱 zip 에는 없다, 약 1.9GB).
-    // 앱 폴더의 CPU 판과 DLL 이름이 같아서, sherpa-onnx 를 처음 부르기 전에 한 번만 GPU 판을 먼저 올려 두는 방식이다(바꾸면 앱을 다시 켜야 한다).
+    // 앱 폴더의 CPU 판과 DLL 이름이 같아서, sherpa-onnx 를 처음 부르기 전에(모델을 처음 불러올 때) 한 번만 GPU 판을 먼저 올려 두는 방식이다(바꾸면 앱을 다시 켜야 한다).
+    // GPU 준비 도중 앱이 죽을 수 있어서(CUDA 를 못 쓰는 PC·드라이버) 준비 전에 GpuTryMarker 를 만들고 첫 합성이 끝나면 지운다.
+    // 다음에 켤 때 표시 파일이 남아 있으면 GPU 를 건너뛰고 CPU 로 읽는다. 설정의 GPU 스위치를 다시 켜면 표시 파일을 지워 다시 시도한다.
     // 2026-11-14 측정(RTX 5090, 남자 1, 단계 8, 11줄): 합성 중간값 CPU 401ms → GPU 189ms
     public static string GpuDir => AppPaths.DataFile("tts-gpu");
     private static readonly string[] GpuFiles =
         { "sherpa-onnx-c-api.dll", "onnxruntime.dll", "onnxruntime_providers_cuda.dll", "onnxruntime_providers_shared.dll",
           "cudart64_13.dll", "cublas64_13.dll", "cublasLt64_13.dll", "cufft64_12.dll", "cudnn64_9.dll", "cudnn_ops64_9.dll", "cudnn_cnn64_9.dll", "cudnn_graph64_9.dll" };
     public static bool GpuFilesReady => GpuFiles.All(f => File.Exists(Path.Combine(GpuDir, f)));
+    private static string GpuTryMarker => AppPaths.DataFile("tts-gpu-trying");
+    public static bool GpuWanted { get; set; }        // 설정 SubTtsGpu. 모델을 처음 불러오기 전에만 효과가 있다
     public static bool GpuActive { get; private set; }
-    private static bool _nativeChosen;
+    public static bool GpuFailed { get; private set; } // GPU 를 원했지만 못 올렸거나 지난번 준비 중 앱이 끝났다
+    public static bool NativeChosen => _nativeChosen;
+    private static volatile bool _nativeChosen;
+    private static bool _gpuConfirmed;
 
-    /// <summary>앱을 켤 때 sherpa-onnx 를 처음 부르기 전에 한 번 부른다. wanted 이고 GPU 파일이 다 있으면 GPU 판을 쓴다</summary>
-    public static void ChooseNative(bool wanted)
+    /// <summary>설정에서 GPU 스위치를 켤 때 부른다 — 지난번 실패 표시를 지워 다음에 다시 시도하게</summary>
+    public static void ResetGpuTry()
+    {
+        try { File.Delete(GpuTryMarker); } catch (Exception) { }
+    }
+
+    // sherpa-onnx 를 처음 부르기 직전(LoadSupertonic)에 한 번. GpuWanted 이고 파일이 다 있고 지난번에 죽지 않았으면 GPU 판을 쓴다
+    private static void ChooseNative()
     {
         if (_nativeChosen) return;
         _nativeChosen = true;
-        if (!wanted || !GpuFilesReady) return;
+        if (!GpuWanted || !GpuFilesReady) return;
+        if (File.Exists(GpuTryMarker)) { GpuFailed = true; Log("지난번 GPU 준비 중 앱이 끝나 이번에는 CPU 로 읽습니다"); return; }
+        IntPtr ort = IntPtr.Zero, api = IntPtr.Zero;
         try
         {
+            File.WriteAllText(GpuTryMarker, DateTime.Now.ToString("s"));
             // CUDA DLL 은 onnxruntime 이 이름으로 찾는다 — 이 프로세스의 PATH 앞에 둔다
             Environment.SetEnvironmentVariable("PATH", GpuDir + ";" + Environment.GetEnvironmentVariable("PATH"));
-            NativeLibrary.Load(Path.Combine(GpuDir, "onnxruntime.dll")); // 앱 폴더의 같은 이름 CPU 판보다 먼저 올린다
-            IntPtr api = NativeLibrary.Load(Path.Combine(GpuDir, "sherpa-onnx-c-api.dll"));
+            ort = NativeLibrary.Load(Path.Combine(GpuDir, "onnxruntime.dll")); // 앱 폴더의 같은 이름 CPU 판보다 먼저 올린다
+            api = NativeLibrary.Load(Path.Combine(GpuDir, "sherpa-onnx-c-api.dll"));
+            IntPtr h = api;
             NativeLibrary.SetDllImportResolver(typeof(OfflineTts).Assembly,
-                (name, _, _) => name.StartsWith("sherpa-onnx-c-api", StringComparison.OrdinalIgnoreCase) ? api : IntPtr.Zero);
+                (name, _, _) => name.StartsWith("sherpa-onnx-c-api", StringComparison.OrdinalIgnoreCase) ? h : IntPtr.Zero);
             GpuActive = true;
         }
-        catch (Exception ex) { Log("GPU 파일을 못 올려 CPU 로 읽습니다: " + ex.Message); }
+        catch (Exception ex)
+        {
+            // 반만 올린 GPU 판을 내린다 — 남겨 두면 CPU 판 sherpa 가 같은 이름의 GPU 판 onnxruntime 에 붙는다
+            if (api != IntPtr.Zero) NativeLibrary.Free(api);
+            if (ort != IntPtr.Zero) NativeLibrary.Free(ort);
+            ResetGpuTry();
+            GpuFailed = true;
+            Log("GPU 파일을 못 올려 CPU 로 읽습니다: " + ex.Message);
+        }
     }
 
     // 사용자가 2026-11-14 비교 청취로 고른 화자(화자 번호 0~9 중)
@@ -96,7 +121,7 @@ public sealed class SubtitleSpeaker : IDisposable
         _synth.Options.SpeakingRate = Math.Clamp(rate, 0.5, 3.0);
         _synth.Options.AudioPitch = Math.Clamp(pitch, 0.0, 2.0);
         _synth.Options.AudioVolume = Math.Clamp(volume, 0.0, 1.0); // 윈도우 목소리는 100% 가 최대
-        _last = ""; // 설정을 바꾼 뒤 같은 줄이 다시 오면 새 설정으로 읽는다
+        // _last 는 그대로 둔다 — 막대를 움직일 때마다 지금 줄이 다시 쌓여 되풀이해 읽던 문제(2026-11-15 리뷰). 새 설정은 다음 줄부터
     }
 
     // ── 줄 차례 ──
@@ -110,7 +135,13 @@ public sealed class SubtitleSpeaker : IDisposable
     private double _spc = 0.22;     // 1배속에서 한 글자(공백 뺌)에 걸리는 초 — 2026-11-14 기록 기준 시작값
     private double _gap;            // 최근 자막 사이 간격(초, 지수 평균). 0 = 아직 모름
     private DateTime _lastArrival = DateTime.MinValue, _busyUntil = DateTime.MinValue; // _busyUntil = 쌓인 말이 다 끝날 예상 시각
-    private readonly Queue<Task<MediaSource?>> _queue = new(); // 읽을 줄(합성 중이거나 끝남), 온 순서대로
+    private readonly Queue<Job> _queue = new(); // 읽을 줄(합성 중이거나 끝남), 온 순서대로
+    private sealed class Job
+    {
+        public Task<MediaSource?> Synth = null!;
+        public volatile bool Dropped; // 밀려서 버림 — 합성 중이면 그만둔다
+        public double Seconds;        // 예상 말 길이(_busyUntil 에서 되돌릴 값)
+    }
     private bool _pumping;
     private TaskCompletionSource? _playDone;
 
@@ -139,8 +170,17 @@ public sealed class SubtitleSpeaker : IDisposable
         _busyUntil = start.AddSeconds(d1 / speed);
         double boost = speed / _rate;
         Log($"#{id} 받음 (앞에 {behind}줄, x{speed:0.00}, 간격 {_gap:0.0}s, 1배속 {d1:0.0}s) {text}");
-        _queue.Enqueue(SynthesizeAsync(text, boost, _gen, id));
-        while (_queue.Count > MaxBacklog) { _queue.Dequeue(); Log("밀려서 가장 오래된 줄 버림"); } // 너무 밀렸다 — 오래된 줄을 버린다
+        var job = new Job { Seconds = d1 / speed };
+        job.Synth = SynthesizeAsync(text, boost, _gen, id, job);
+        _queue.Enqueue(job);
+        while (_queue.Count > MaxBacklog) // 너무 밀렸다 — 오래된 줄을 버린다(합성도 그만두고, 예상 끝 시각에서도 뺀다)
+        {
+            var old = _queue.Dequeue();
+            old.Dropped = true;
+            _busyUntil = _busyUntil.AddSeconds(-old.Seconds);
+            _ = old.Synth.ContinueWith(t => { if (t.IsCompletedSuccessfully) t.Result?.Dispose(); }, TaskScheduler.Default);
+            Log("밀려서 가장 오래된 줄 버림");
+        }
         if (!_pumping) Pump(_gen);
     }
 
@@ -151,7 +191,7 @@ public sealed class SubtitleSpeaker : IDisposable
         {
             while (_queue.Count > 0 && g == _gen)
             {
-                var src = await _queue.Dequeue();
+                var src = await _queue.Dequeue().Synth;
                 if (g != _gen) break;
                 if (src == null) { Log("소리 없음 — 건너뜀"); continue; }
                 _playDone = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -159,7 +199,13 @@ public sealed class SubtitleSpeaker : IDisposable
                 _player.Play();
                 var sw = Stopwatch.StartNew();
                 Log("재생 시작");
-                await _playDone.Task;
+                // 끝 신호(MediaEnded·MediaFailed)를 못 받으면(오디오 장치가 바뀌는 등) 차례가 영영 멈춘다 — 30초면 넘어간다
+                if (await Task.WhenAny(_playDone.Task, Task.Delay(TimeSpan.FromSeconds(30))) != _playDone.Task)
+                {
+                    Log("재생 끝 신호가 없어 다음 줄로 넘어감");
+                    _player.Pause();
+                    continue;
+                }
                 Log($"재생 끝 {sw.ElapsedMilliseconds}ms");
             }
         }
@@ -167,14 +213,14 @@ public sealed class SubtitleSpeaker : IDisposable
         finally { if (g == _gen) { _pumping = false; _busyUntil = DateTime.MinValue; } } // 다 읽었다 — 예상이 틀렸어도 여기서 맞춘다
     }
 
-    private async Task<MediaSource?> SynthesizeAsync(string text, double boost, int g, int id)
+    private async Task<MediaSource?> SynthesizeAsync(string text, double boost, int g, int id, Job job)
     {
         var sw = Stopwatch.StartNew();
         try
         {
             if (_voice.StartsWith("st:", StringComparison.Ordinal) && int.TryParse(_voice.AsSpan(3), out int sid) && ModelReady)
             {
-                byte[]? wav = await Task.Run(() => SynthesizeSupertonic(text, sid, boost, g));
+                byte[]? wav = await Task.Run(() => SynthesizeSupertonic(text, sid, boost, () => g == _gen && !job.Dropped));
                 Log($"#{id} 합성 {sw.ElapsedMilliseconds}ms " + (wav == null ? "취소됨" : $"{(wav.Length - 44) / 2}표본"));
                 if (wav != null) LearnPace(text, wav, _rate * boost); // await 뒤라 UI 스레드다
                 return wav == null ? null : MediaSource.CreateFromStream(new MemoryStream(wav).AsRandomAccessStream(), "audio/wav");
@@ -197,11 +243,12 @@ public sealed class SubtitleSpeaker : IDisposable
     }
 
     // 높낮이는 재생 표본율을 pitch 배로 바꿔서 올리고 내린다. 그러면 빠르기도 pitch 배가 되므로 합성 속도를 rate/pitch 로 미리 맞춘다
-    private byte[]? SynthesizeSupertonic(string text, int sid, double boost, int g)
+    /// <param name="alive">false 가 되면(멈춤·버림) 합성을 그만두고 null</param>
+    private byte[]? SynthesizeSupertonic(string text, int sid, double boost, Func<bool> alive)
     {
         lock (_stLock)
         {
-            if (g != _gen) return null;
+            if (!alive()) return null;
             _st ??= LoadSupertonic();
             var cfg = new OfflineTtsGenerationConfig
             {
@@ -210,11 +257,12 @@ public sealed class SubtitleSpeaker : IDisposable
                 Speed = (float)Math.Clamp(_rate * boost / _pitch, 0.5, 4.0),
             };
             cfg.Extra["lang"] = Lang(text);
-            // 멈추면(Stop) 합성 도중에 그만둔다(0 = 멈춤)
-            var audio = _st.GenerateWithConfig(text, cfg, (IntPtr _, int _, float _, IntPtr _) => g == _gen ? 1 : 0);
+            // 멈추거나 버리면 합성 도중에 그만둔다(0 = 멈춤)
+            var audio = _st.GenerateWithConfig(text, cfg, (IntPtr _, int _, float _, IntPtr _) => alive() ? 1 : 0);
+            if (GpuActive && !_gpuConfirmed) { _gpuConfirmed = true; ResetGpuTry(); } // GPU 로 한 줄 만들었다 — 이제 안전
             try
             {
-                if (g != _gen) return null;
+                if (!alive()) return null;
                 return ToWav(audio.Samples, (int)Math.Round(audio.SampleRate * _pitch), (float)_volume);
             }
             finally { audio.Dispose(); } // 네이티브 버퍼를 놓는다(IDisposable 을 선언하지 않았지만 Dispose 가 있다)
@@ -222,21 +270,25 @@ public sealed class SubtitleSpeaker : IDisposable
     }
 
     /// <summary>Supertonic 모델을 미리 불러 짧은 말을 한 번 합성해 둔다 — 첫 줄이 늦지 않게. 모델이 없거나 윈도우 목소리면 아무것도 안 한다</summary>
+    private volatile bool _warming;
     public void Warm()
     {
-        if (_st != null) return; // 이미 불러 둠 — 설정 막대를 움직일 때마다 합성하지 않게
+        // 이미 불렀거나 부르는 중 — 설정 막대를 움직일 때마다 작업이 쌓여 첫 줄 합성이 밀리지 않게(2026-11-15 리뷰)
+        if (_warming || _st != null) return;
         if (!_voice.StartsWith("st:", StringComparison.Ordinal) || !int.TryParse(_voice.AsSpan(3), out int sid) || !ModelReady) return;
+        _warming = true;
         int g = _gen;
         Task.Run(() =>
         {
             var sw = Stopwatch.StartNew();
-            try { SynthesizeSupertonic("네", sid, 1.0, g); Log($"미리 불러 둠 {sw.ElapsedMilliseconds}ms"); }
-            catch (Exception ex) { Log("미리 불러 두기 실패: " + ex.Message); }
+            try { SynthesizeSupertonic("네", sid, 1.0, () => g == _gen); Log($"미리 불러 둠 {sw.ElapsedMilliseconds}ms"); }
+            catch (Exception ex) { Log("미리 불러 두기 실패: " + ex.Message); _warming = false; }
         });
     }
 
     private static OfflineTts LoadSupertonic()
     {
+        ChooseNative(); // sherpa-onnx 네이티브를 처음 부르기 전에 CPU·GPU 판을 고른다
         var c = new OfflineTtsConfig();
         string d = ModelDir;
         c.Model.Supertonic.DurationPredictor = Path.Combine(d, "duration_predictor.int8.onnx");

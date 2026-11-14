@@ -91,9 +91,15 @@ public partial class SettingsWindow
 
     private void UpdateSubTtsGpu()
     {
-        string now = SubtitleSpeaker.GpuActive ? "지금 GPU 로 합성 중." : "지금 CPU 로 합성 중.";
-        if (!SubtitleSpeaker.GpuFilesReady) now += " GPU 파일이 없습니다(" + SubtitleSpeaker.GpuDir + ").";
-        else if (_s.SubTtsGpu != SubtitleSpeaker.GpuActive) now += " 앱을 다시 켜면 바뀝니다.";
+        string now;
+        if (!SubtitleSpeaker.GpuFilesReady) now = "GPU 파일이 없습니다(" + SubtitleSpeaker.GpuDir + "). CPU 로 읽습니다.";
+        else if (!SubtitleSpeaker.NativeChosen) now = "목소리 모델을 처음 불러올 때 정합니다.";
+        else if (SubtitleSpeaker.GpuFailed) now = "GPU 를 못 불러와 CPU 로 읽는 중입니다(이유는 tts-log.txt). 스위치를 껐다 켜고 앱을 다시 켜면 다시 시도합니다.";
+        else
+        {
+            now = SubtitleSpeaker.GpuActive ? "지금 GPU 로 합성 중." : "지금 CPU 로 합성 중.";
+            if (_s.SubTtsGpu != SubtitleSpeaker.GpuActive) now += " 앱을 다시 켜면 바뀝니다.";
+        }
         SubTtsGpuText.Text = now;
     }
 
@@ -101,6 +107,7 @@ public partial class SettingsWindow
     {
         if (_loading) return;
         _s.SubTtsGpu = SubTtsGpuToggle.IsChecked == true;
+        if (_s.SubTtsGpu) SubtitleSpeaker.ResetGpuTry(); // 지난번 실패 표시를 지워 다음에 다시 시도
         Changed(nameof(AppSettings.SubTtsGpu));
         UpdateSubTtsGpu();
     }

@@ -13,7 +13,7 @@ public partial class MainWindow
 
     private void InitSubtitleTts()
     {
-        SubtitleSpeaker.ChooseNative(_settings.SubTtsGpu); // sherpa-onnx 를 처음 부르기 전에 CPU·GPU 판을 고른다
+        SubtitleSpeaker.GpuWanted = _settings.SubTtsGpu; // 모델을 처음 불러올 때 CPU·GPU 판을 고른다
         if (_mpv != null)
             _mpv.SubtitleSample += s =>
             {
