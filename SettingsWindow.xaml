@@ -292,7 +292,7 @@
                             <Grid Style="{StaticResource Row}">
                                 <StackPanel HorizontalAlignment="Left">
                                     <TextBlock Text="GPU로 합성 (NVIDIA)" Style="{StaticResource RowName}"/>
-                                    <TextBlock Text="여자·남자 목소리를 그래픽카드(CUDA)로 만들어 한 줄당 약 0.2초 빨리 읽기 시작합니다. 앱을 다시 켜면 적용되고, GPU 파일이 없으면 CPU 로 읽습니다." Style="{StaticResource RowHint}" MaxWidth="280"/>
+                                    <TextBlock Text="여자·남자 목소리를 그래픽카드(CUDA)로 만들어 한 줄당 약 0.2초 빨리 읽기 시작합니다. 켜면 필요한 파일(약 1.2GB)을 자동으로 받습니다. 받기 전이나 GPU 를 못 쓰면 CPU 로 읽습니다." Style="{StaticResource RowHint}" MaxWidth="280"/>
                                     <TextBlock x:Name="SubTtsGpuText" Style="{StaticResource RowHint}" MaxWidth="280"/>
                                 </StackPanel>
                                 <CheckBox x:Name="SubTtsGpuToggle" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" Checked="SubTtsGpu_Changed" Unchecked="SubTtsGpu_Changed"/>

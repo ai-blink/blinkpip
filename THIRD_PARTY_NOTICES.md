@@ -13,6 +13,8 @@
 | sherpa-onnx (`sherpa-onnx.dll`, `runtimes/win-x64/native/sherpa-onnx-c-api.dll`) — 자막 읽어 주기 | NuGet `org.k2fsa.sherpa.onnx` 2.0.1 (0.6.3부터) | Apache-2.0 | <https://github.com/k2-fsa/sherpa-onnx> |
 | ONNX Runtime (`runtimes/win-x64/native/onnxruntime.dll`) — sherpa-onnx가 씀 | 1.28.2 (0.6.3부터) | MIT | <https://github.com/microsoft/onnxruntime> |
 
+**GPU로 합성을 켤 때 받는 것**(압축 파일에 없음, `%LocalAppData%\blinkpip\tts-gpu\`): sherpa-onnx 2.0.1 CUDA 판(`sherpa-onnx-c-api.dll`·`onnxruntime*.dll`, Apache-2.0·MIT, <https://github.com/k2-fsa/sherpa-onnx/releases/tag/v2.0.1>), NVIDIA cuBLAS 13.0.2.14(`nvidia-cublas`)·cuDNN 9.24.0.43(`nvidia-cudnn-cu13`) — NVIDIA가 PyPI에 올린 재배포 패키지에서 DLL만 꺼낸다. NVIDIA 소프트웨어 라이선스: <https://docs.nvidia.com/cuda/eula/> · <https://docs.nvidia.com/deeplearning/cudnn/latest/reference/eula.html>
+
 **압축 파일에 넣지 않고 처음 쓸 때 받는 것**: 자막 읽어 주기의 여자·남자 목소리 모델 Supertonic 3(Supertone Inc., sherpa-onnx int8 변환본 `sherpa-onnx-supertonic-3-tts-int8-2026-05-11`)은 OpenRAIL-M 라이선스(쓰임새 제한 포함)라 GPL 배포물에 섞지 않는다. 앱이 <https://github.com/k2-fsa/sherpa-onnx/releases/tag/tts-models> 에서 `%LocalAppData%\blinkpip\tts\`로 받는다. 모델 라이선스: <https://huggingface.co/Supertone/supertonic-3> · 원 저장소(2026-07-23 개발 종료·보관): <https://github.com/supertone-inc/supertonic>
 
 ## GPL 구성 요소의 소스 코드

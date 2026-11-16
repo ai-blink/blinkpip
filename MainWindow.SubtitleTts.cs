@@ -50,6 +50,7 @@ public partial class MainWindow
             _speaker ??= new SubtitleSpeaker();
             ConfigureSpeaker();
             EnsureTtsModel();
+            EnsureGpuFiles();
             _speaker.Warm(); // 첫 줄을 기다리지 않게 모델을 미리 불러 둔다
         }
         _lastTtsMpv = null; // 켜는 순간 지금 줄부터 읽게
@@ -63,6 +64,15 @@ public partial class MainWindow
         if (!_settings.SubTtsVoice.StartsWith("st:", StringComparison.Ordinal) || SubtitleSpeaker.ModelReady) return;
         try { await SubtitleSpeaker.EnsureModelAsync(); _speaker?.Warm(); }
         catch (Exception) { /* 설정 창에 실패 문구가 뜬다. 다음에 켜거나 목소리를 고를 때 다시 시도 */ }
+    }
+
+    // «GPU로 합성»이 켜져 있는데 GPU 파일이 없으면 받는다(약 1.2GB). 모델을 아직 안 불렀으면 다 받은 뒤 바로 GPU 로 읽고,
+    // 이미 CPU 로 불렀으면 앱을 다시 켤 때부터 GPU 로 읽는다. 진행·실패 문구는 설정 창에 보인다
+    private async void EnsureGpuFiles()
+    {
+        if (!_settings.SubTtsGpu || SubtitleSpeaker.GpuFilesReady || !SubtitleSpeaker.NvidiaDriverPresent) return;
+        try { await SubtitleSpeaker.EnsureGpuFilesAsync(); }
+        catch (Exception) { /* 설정 창에 실패 문구가 뜬다. 다음에 켜거나 스위치를 다시 켤 때 다시 시도 */ }
     }
 
     // PIP 왼쪽 위 목소리 버튼

@@ -35,6 +35,7 @@ public partial class SettingsWindow
         SubTtsVolumeText.Text = $"{_s.SubTtsVolume * 100:0}%";
         SubTtsGpuToggle.IsChecked = _s.SubTtsGpu;
         UpdateSubTtsGpu();
+        HookSubTtsGpu();
         UpdateSubTtsModel();
         HookSubTtsModel();
         UpdateSubStyleLabels();
@@ -91,8 +92,11 @@ public partial class SettingsWindow
 
     private void UpdateSubTtsGpu()
     {
+        if (SubtitleSpeaker.GpuDownloading) return; // 받는 동안은 진행 문구(GpuStatus)를 그대로 둔다
         string now;
-        if (!SubtitleSpeaker.GpuFilesReady) now = "GPU 파일이 없습니다(" + SubtitleSpeaker.GpuDir + "). CPU 로 읽습니다.";
+        if (!SubtitleSpeaker.NvidiaDriverPresent) now = "NVIDIA 그래픽카드 드라이버가 없어 GPU 로 합성할 수 없습니다. CPU 로 읽습니다.";
+        else if (!SubtitleSpeaker.GpuFilesReady)
+            now = $"GPU 파일이 없습니다. 스위치를 켜면 자동으로 받습니다(약 {SubtitleSpeaker.GpuDownloadBytes / (1024.0 * 1024 * 1024):0.0}GB). 그동안은 CPU 로 읽습니다.";
         else if (!SubtitleSpeaker.NativeChosen) now = "목소리 모델을 처음 불러올 때 정합니다.";
         else if (SubtitleSpeaker.GpuFailed) now = "GPU 를 못 불러와 CPU 로 읽는 중입니다(이유는 tts-log.txt). 스위치를 껐다 켜고 앱을 다시 켜면 다시 시도합니다.";
         else
@@ -101,6 +105,18 @@ public partial class SettingsWindow
             if (_s.SubTtsGpu != SubtitleSpeaker.GpuActive) now += " 앱을 다시 켜면 바뀝니다.";
         }
         SubTtsGpuText.Text = now;
+    }
+
+    // GPU 파일 자동 받기(MainWindow.EnsureGpuFiles)의 진행 소식을 받는다. 창이 닫히면 끊는다
+    private void HookSubTtsGpu()
+    {
+        Action<string> onStatus = m =>
+        {
+            if (m == "받아 둠") UpdateSubTtsGpu();
+            else SubTtsGpuText.Text = "GPU 파일 " + m;
+        };
+        SubtitleSpeaker.GpuStatus += onStatus;
+        Closed += (_, _) => SubtitleSpeaker.GpuStatus -= onStatus;
     }
 
     private void SubTtsGpu_Changed(object sender, RoutedEventArgs e)

@@ -109,7 +109,7 @@ dotnet run --project C:\ai\projects\blinkpip
   - 예전에는 밀린 줄 중 가장 최근 것만 남겨 빠른 대화에서 줄이 빠졌다. 2026-11-14 기록으로 보니 1.0배 말 길이가 자막 간격과 거의 같아(중간값 1.0배) 늘 1~3줄씩 밀렸다.
 - **빠르기 자동 맞춤**: 줄마다 «최근 자막 간격 × 0.9» 안에 끝나도록 빠르기를 정한다(앞에 남은 말이 끝날 때부터 셈). 가장 느리게 = 설정의 읽는 속도, 가장 빠르게 = 1.25배(2026-11-15 처음 넣은 1.5배는 빽빽한 대사에서 줄 대부분이 1.5배로 읽혀 끊겨 들렸고, 같은 대사를 모델 1.0·1.25·1.5배와 재생만 빠르게 한 판으로 비교해 들어 보고 1.25배를 골랐다). 한 글자당 시간은 합성 결과로 계속 다시 잰다. 같은 기록으로 모의 계산하면 말 시작 지연이 1~2초에서 대부분 0.3초(최대 1.1초)로 준다.
 - **빨리 받기**: 웹 페이지 자막은 글자가 바뀌면 바로(MutationObserver, 다음 그리기 때) 보내고 200ms 확인은 예비로 둔다(디즈니+ shadow root 안 변화는 관찰에 안 잡힌다). 자막 읽기가 켜져 있으면 앱을 켤 때 모델을 미리 불러 둔다.
-- **GPU로 합성**(설정 토글, 앱을 다시 켜야 적용): `%LocalAppData%\blinkpip\tts-gpu\`에 sherpa-onnx 2.0.1 CUDA 13 판(onnxruntime 1.28.2)과 CUDA 13·cuDNN 9 DLL(약 1.9GB, zip에 없음)이 있어야 한다. 앱 폴더의 CPU 판과 DLL 이름이 같아 모델을 처음 불러올 때(sherpa-onnx를 처음 부르기 전) GPU 판을 먼저 올리고 PATH 앞에 폴더를 둔다. 파일이 없거나 못 올리면 반쯤 올린 DLL을 내리고 CPU로 읽는다. GPU 준비 전에 `tts-gpu-trying` 표시 파일을 만들고 첫 합성 뒤 지운다 — 준비 중 앱이 죽어 표시 파일이 남으면 다음에는 CPU로 시작하고, 설정의 GPU 스위치를 다시 켜면 지운다. 2026-11-14 측정(RTX 5090, 남자 1, 11줄): 합성 중간값 CPU 401ms → GPU 189ms, 대신 앱 시작 준비가 약 6초.
+- **GPU로 합성**(설정 토글): `%LocalAppData%\blinkpip\tts-gpu\`에 sherpa-onnx 2.0.1 CUDA 13 판(onnxruntime 1.28.2)과 cuBLAS 13·cuDNN 9 DLL이 있어야 한다(zip에 없음). 토글을 켜거나, 켜진 채로 앱을 켜면 NVIDIA 드라이버(`nvcuda.dll`)가 있을 때 자동으로 받는다: sherpa-onnx GitHub 릴리스의 `…win-x64-cuda.tar.bz2`(458MB)와 NVIDIA가 PyPI에 올린 `nvidia-cublas` 13.0.2.14·`nvidia-cudnn-cu13` 9.24.0.43 wheel(각 383·393MB)에서 DLL 14개(약 1.2GB)만 꺼낸다. 버전과 SHA-256은 `SubtitleSpeaker.GpuSources`에 고정했고, `tts-gpu_dl`에 다 모은 뒤 한 번에 옮긴다. 파일 목록은 2026-11-16 GPU 합성 때 실제로 올라온 DLL이다(cudart·cuFFT·cuRAND·nvrtc는 안 올라와 받지 않는다). 모델을 아직 안 불렀으면 받은 직후부터, 이미 CPU로 불렀으면 앱을 다시 켤 때부터 GPU로 읽는다. 앱 폴더의 CPU 판과 DLL 이름이 같아 모델을 처음 불러올 때(sherpa-onnx를 처음 부르기 전) GPU 판을 먼저 올리고 PATH 앞에 폴더를 둔다. 파일이 없거나 못 올리면 반쯤 올린 DLL을 내리고 CPU로 읽는다. GPU 준비 전에 `tts-gpu-trying` 표시 파일을 만들고 첫 합성 뒤 지운다 — 준비 중 앱이 죽어 표시 파일이 남으면 다음에는 CPU로 시작하고, 설정의 GPU 스위치를 다시 켜면 지운다. 2026-11-14 측정(RTX 5090, 남자 1, 11줄): 합성 중간값 CPU 401ms → GPU 189ms, 대신 앱 시작 준비가 약 6초.
 - **진단 기록**: `%LocalAppData%\blinkpip\tts-log.txt`에 줄마다 받음(밀린 줄 수·빠르기·간격)·합성 시간·재생 시작/끝·버림을 남긴다(512KB 넘으면 새로 시작).
 - **높낮이·크기·속도**: 높낮이는 재생 표본율을 높낮이 배로 바꾸고 합성 속도를 `속도/높낮이`로 맞춰 빠르기를 유지한다(0.80~1.25). 크기는 표본에 곱한다(10~150%). 윈도우 목소리는 `SpeechSynthesizerOptions`의 `AudioPitch`·`AudioVolume`(최대 100%)·`SpeakingRate`.
 - **언어**: 한글이 있으면 `ko`, 가나가 있으면 `ja`, 그 밖은 `en`. 원 저장소는 2026-07-23 개발이 끝나 보관됐다(받아 둔 모델은 계속 쓸 수 있다).
@@ -183,7 +183,7 @@ mpv 화면에서는 `Ctrl+↑/↓`(영상 창 포커스)로도 자막 크기를 
 `내 사진\blinkpip\` — 스크린샷 저장 폴더(OneDrive로 리디렉션된 PC에서는 OneDrive 사진 폴더 아래).
 `%LocalAppData%\blinkpip_WebView2\` — WebView2 프로필(로그인 유지).
 `%LocalAppData%\blinkpip\tts\` — 자막 읽어 주기 목소리 모델(Supertonic 3, 자동으로 받음).
-`%LocalAppData%\blinkpip\tts-gpu\` — GPU로 합성할 때 쓰는 sherpa-onnx CUDA 판·CUDA DLL(직접 넣음). `tts-log.txt` — 자막 읽기 진단 기록. `tts-clips\` — 최근에 읽은 소리 30줄(WAV + 글자 .txt), 끊겨 들릴 때 소리 자체가 잘렸는지 가르는 용도.
+`%LocalAppData%\blinkpip\tts-gpu\` — GPU로 합성할 때 쓰는 sherpa-onnx CUDA 판·cuBLAS·cuDNN DLL(GPU 토글을 켜면 자동으로 받음, 약 1.2GB). `tts-log.txt` — 자막 읽기 진단 기록. `tts-clips\` — 최근에 읽은 소리 30줄(WAV + 글자 .txt), 끊겨 들릴 때 소리 자체가 잘렸는지 가르는 용도.
 
 ## 설계 결정과 실측 기록
 

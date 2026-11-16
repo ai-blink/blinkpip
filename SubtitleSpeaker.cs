@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using SherpaOnnx;
@@ -30,15 +32,32 @@ public sealed class SubtitleSpeaker : IDisposable
         { "duration_predictor.int8.onnx", "text_encoder.int8.onnx", "vector_estimator.int8.onnx", "vocoder.int8.onnx", "tts.json", "unicode_indexer.bin", "voice.bin" };
     public static bool ModelReady => ModelFiles.All(f => File.Exists(Path.Combine(ModelDir, f)));
 
-    // ── GPU(CUDA) ── 설정 «GPU로 합성». GpuDir 에 sherpa-onnx CUDA 판과 CUDA 13·cuDNN 9 DLL 이 있어야 한다(앱 zip 에는 없다, 약 1.9GB).
+    // ── GPU(CUDA) ── 설정 «GPU로 합성». GpuDir 에 sherpa-onnx CUDA 판과 cuBLAS 13·cuDNN 9 DLL 이 있어야 한다(앱 zip 에는 없고, 켜면 GpuSources 에서 자동으로 받는다).
     // 앱 폴더의 CPU 판과 DLL 이름이 같아서, sherpa-onnx 를 처음 부르기 전에(모델을 처음 불러올 때) 한 번만 GPU 판을 먼저 올려 두는 방식이다(바꾸면 앱을 다시 켜야 한다).
     // GPU 준비 도중 앱이 죽을 수 있어서(CUDA 를 못 쓰는 PC·드라이버) 준비 전에 GpuTryMarker 를 만들고 첫 합성이 끝나면 지운다.
     // 다음에 켤 때 표시 파일이 남아 있으면 GPU 를 건너뛰고 CPU 로 읽는다. 설정의 GPU 스위치를 다시 켜면 표시 파일을 지워 다시 시도한다.
     // 2026-11-14 측정(RTX 5090, 남자 1, 단계 8, 11줄): 합성 중간값 CPU 401ms → GPU 189ms
     public static string GpuDir => AppPaths.DataFile("tts-gpu");
-    private static readonly string[] GpuFiles =
-        { "sherpa-onnx-c-api.dll", "onnxruntime.dll", "onnxruntime_providers_cuda.dll", "onnxruntime_providers_shared.dll",
-          "cudart64_13.dll", "cublas64_13.dll", "cublasLt64_13.dll", "cufft64_12.dll", "cudnn64_9.dll", "cudnn_ops64_9.dll", "cudnn_cnn64_9.dll", "cudnn_graph64_9.dll" };
+    // 받을 곳(버전·지문 고정). 파일 목록은 2026-11-16 GPU 로 합성할 때 실제로 올라온 DLL 이다 — cudart·cuFFT·cuRAND·nvrtc 는 이 모델에서 안 올라와 받지 않는다.
+    // cuBLAS·cuDNN 은 NVIDIA 가 PyPI 에 올린 공식 패키지(wheel = zip)에서 DLL 만 꺼낸다. cuDNN 9.24.0.43 은 2026-11-14 시험한 판과 같다
+    private sealed record GpuSource(string Url, string Sha256, long Size, string[] Files);
+    private static readonly GpuSource[] GpuSources =
+    {
+        new("https://github.com/k2-fsa/sherpa-onnx/releases/download/v2.0.1/sherpa-onnx-v2.0.1-cuda-13.x-cudnn-9.x-onnxruntime1.28.2-win-x64-cuda.tar.bz2",
+            "206f56c80cca702ca564fb21e48462f4210a13f941de32c336a4c6debb1e9efb", 480541871,
+            new[] { "sherpa-onnx-c-api.dll", "onnxruntime.dll", "onnxruntime_providers_cuda.dll", "onnxruntime_providers_shared.dll" }),
+        new("https://files.pythonhosted.org/packages/f3/91/bda39230b7a4c102bb724c21b50823efc63544490a885fea0b604911c0ab/nvidia_cublas-13.0.2.14-py3-none-win_amd64.whl",
+            "5f7a90456b1392db60e28719547ba6e00696bfa81304b6887cf287f9edf2c1d7", 401887280,
+            new[] { "cublas64_13.dll", "cublasLt64_13.dll" }),
+        new("https://files.pythonhosted.org/packages/31/23/1dd3aa15cc4ab62c8fc88f8049ef137bc44c17892f5577bc80d994941f77/nvidia_cudnn_cu13-9.24.0.43-py3-none-win_amd64.whl",
+            "67a7273b5cf062f9446fd76cf464351a1c0f66501e6cd78f6675c0d604d8ac87", 412314771,
+            new[] { "cudnn64_9.dll", "cudnn_graph64_9.dll", "cudnn_ops64_9.dll", "cudnn_cnn64_9.dll", "cudnn_heuristic64_9.dll",
+                    "cudnn_engines_precompiled64_9.dll", "cudnn_engines_runtime_compiled64_9.dll", "cudnn_engines_tensor_ir64_9.dll" }),
+    };
+    private static readonly string[] GpuFiles = GpuSources.SelectMany(s => s.Files).ToArray(); // GpuSources 보다 뒤에 있어야 한다(정적 초기화 순서)
+    public static long GpuDownloadBytes => GpuSources.Sum(s => s.Size);
+    /// <summary>NVIDIA 드라이버가 깔려 있나(nvcuda.dll). 없으면 GPU 파일을 받지 않는다</summary>
+    public static bool NvidiaDriverPresent => File.Exists(Path.Combine(Environment.SystemDirectory, "nvcuda.dll"));
     public static bool GpuFilesReady => GpuFiles.All(f => File.Exists(Path.Combine(GpuDir, f)));
     private static string GpuTryMarker => AppPaths.DataFile("tts-gpu-trying");
     public static bool GpuWanted { get; set; }        // 설정 SubTtsGpu. 모델을 처음 불러오기 전에만 효과가 있다
@@ -451,6 +470,98 @@ public sealed class SubtitleSpeaker : IDisposable
         Directory.Move(Path.Combine(stage, ModelName), ModelDir);
         Directory.Delete(stage, true);
         if (!ModelReady) throw new IOException("받은 파일에 모델이 없습니다.");
+    }
+
+    // ── GPU 파일 자동 받기 ── 설정 «GPU로 합성»을 켜면 받는다(약 1.2GB). 한 번에 하나만. UI 스레드에서 부르면 진행 소식(GpuStatus)도 UI 스레드로 온다
+    private static Task? _gpuDownload;
+    public static event Action<string>? GpuStatus;
+    public static bool GpuDownloading => _gpuDownload is { IsCompleted: false };
+
+    /// <summary>GPU 파일이 없으면 받는다(이미 받는 중이면 그 작업을 돌려준다). 실패하면 다음 호출 때 다시 시도한다</summary>
+    public static Task EnsureGpuFilesAsync()
+    {
+        if (GpuFilesReady) return Task.CompletedTask;
+        return _gpuDownload is { IsCompleted: false } ? _gpuDownload : _gpuDownload = Run();
+
+        static async Task Run()
+        {
+            try
+            {
+                await DownloadGpuAsync(new Progress<string>(m => GpuStatus?.Invoke(m)));
+                Log("GPU 파일 받아 둠");
+                GpuStatus?.Invoke("받아 둠");
+            }
+            catch (Exception ex) { Log("GPU 파일 받기 실패: " + ex.Message); GpuStatus?.Invoke("받지 못했습니다: " + ex.Message); throw; }
+        }
+    }
+
+    /// <summary>GpuSources 를 받아 지문을 확인하고 필요한 DLL 만 꺼내, 다 모이면 한 번에 GpuDir 로 옮긴다(반쯤 받은 파일을 쓰지 않게)</summary>
+    public static async Task DownloadGpuAsync(IProgress<string> progress, CancellationToken ct = default)
+    {
+        if (!NvidiaDriverPresent) throw new IOException("NVIDIA 그래픽카드 드라이버가 없습니다.");
+        long total = GpuDownloadBytes;
+        var drive = new DriveInfo(Path.GetPathRoot(Path.GetFullPath(GpuDir))!);
+        if (drive.AvailableFreeSpace < total * 2 + (1L << 30)) throw new IOException($"디스크 공간이 모자랍니다(약 {(total * 2 >> 30) + 1}GB 필요).");
+        string stage = GpuDir + "_dl";
+        if (Directory.Exists(stage)) Directory.Delete(stage, true);
+        Directory.CreateDirectory(stage);
+        long done = 0;
+        using var http = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
+        foreach (var s in GpuSources)
+        {
+            string name = Path.GetFileName(new Uri(s.Url).LocalPath);
+            string tmp = Path.Combine(stage, name + ".part");
+            using (var resp = await http.GetAsync(s.Url, HttpCompletionOption.ResponseHeadersRead, ct))
+            {
+                resp.EnsureSuccessStatusCode();
+                await using var src = await resp.Content.ReadAsStreamAsync(ct);
+                await using var dst = File.Create(tmp);
+                var buf = new byte[1 << 16];
+                long got = 0; int n, lastPct = -1;
+                while ((n = await src.ReadAsync(buf, ct)) > 0)
+                {
+                    await dst.WriteAsync(buf.AsMemory(0, n), ct);
+                    got += n;
+                    int pct = (int)((done + got) * 100 / total);
+                    if (pct != lastPct) { lastPct = pct; progress.Report($"받는 중 {pct}% ({(done + got) >> 20}/{total >> 20}MB)"); }
+                }
+            }
+            done += s.Size;
+            progress.Report("받은 파일 확인 중…");
+            string sha;
+            await using (var fs = File.OpenRead(tmp)) sha = Convert.ToHexString(await SHA256.HashDataAsync(fs, ct)).ToLowerInvariant();
+            if (sha != s.Sha256) throw new IOException(name + " 의 내용이 예상과 다릅니다(지문 불일치).");
+            progress.Report("압축 푸는 중…");
+            if (name.EndsWith(".whl", StringComparison.OrdinalIgnoreCase))
+            {
+                using var zip = ZipFile.OpenRead(tmp); // wheel 은 zip 이다. 폴더 구조와 상관없이 이름으로 꺼낸다
+                foreach (var e in zip.Entries)
+                    if (s.Files.Contains(e.Name, StringComparer.OrdinalIgnoreCase)) e.ExtractToFile(Path.Combine(stage, e.Name), true);
+            }
+            else
+            {
+                // tar.bz2 — 윈도우 10 이상의 tar.exe 로 필요한 파일만 푼다(압축 안 최상위 폴더 = 파일 이름에서 .tar.bz2 뺀 것)
+                string top = name[..^".tar.bz2".Length] + "/lib/";
+                var psi = new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "tar.exe"))
+                { UseShellExecute = false, CreateNoWindow = true, RedirectStandardError = true };
+                foreach (var a in new[] { "-xjf", tmp, "-C", stage }) psi.ArgumentList.Add(a);
+                foreach (var f in s.Files) psi.ArgumentList.Add(top + f);
+                using (var p = Process.Start(psi)!)
+                {
+                    string err = await p.StandardError.ReadToEndAsync(ct);
+                    await p.WaitForExitAsync(ct);
+                    if (p.ExitCode != 0) throw new IOException("압축 풀기 실패: " + err.Trim());
+                }
+                foreach (var f in s.Files) File.Move(Path.Combine(stage, top, f), Path.Combine(stage, f), true);
+                Directory.Delete(Path.Combine(stage, top.Split('/')[0]), true);
+            }
+            File.Delete(tmp);
+        }
+        foreach (var f in GpuFiles)
+            if (!File.Exists(Path.Combine(stage, f))) throw new IOException("받은 파일에 " + f + " 이(가) 없습니다.");
+        Directory.CreateDirectory(GpuDir);
+        foreach (var f in GpuFiles) File.Move(Path.Combine(stage, f), Path.Combine(GpuDir, f), true);
+        Directory.Delete(stage, true);
     }
 
     public void Dispose()
