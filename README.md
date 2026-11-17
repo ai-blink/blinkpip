@@ -1,6 +1,6 @@
 # blinkpip
 
-**버전 0.7.0** (2026-11-18) · 변경 기록 [CHANGELOG.md](CHANGELOG.md) · 라이선스 [GPL-3.0](LICENSE) · 외부 구성 요소 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+**버전 0.7.1** (2026-11-18) · 변경 기록 [CHANGELOG.md](CHANGELOG.md) · 라이선스 [GPL-3.0](LICENSE) · 외부 구성 요소 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
 
 WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 안에서 두 엔진을 URL로 자동 전환한다.
 
@@ -31,7 +31,7 @@ WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 
 - ⇣ 댓글 자동 스크롤(댓글 칸이 열렸을 때만 보임): 누를 때마다 끔 → 느림(초당 15px) → 보통(30) → 빠름(60). 커서가 댓글 칸 위에 있으면 멈춘다.
 - ⏭ 자동 넘기기: 쇼츠는 끝나면 처음부터 반복하므로 끝 → 처음 되감김을 잡아 다음 쇼츠로 넘긴다. 일반 창의 쇼츠에서도 동작한다.
 - 켜짐 상태(자동 넘기기·자동 스크롤 단계)는 웹뷰 프로필의 `localStorage`에 남는다. 쇼츠 웹 화면에서는 자막 읽어 주기가 동작하지 않는다.
-- 유튜브 구조에 기대는 부분: `#shorts-player`, 다음/이전 `#navigation-button-down|up button`, 댓글 단추(`reel-action-bar-view-model` 안 aria-label "댓글"/"comment"), 댓글 창 `engagement-panel-comments-section`. `#shorts-player` 조상의 `contain:layout` 때문에 PIP 동안 그 `contain`을 푼다. 유튜브는 Trusted Types를 강제해 `innerHTML`을 쓰지 않는다. 구조가 바뀌면 넘기기·댓글만 안 되고 재생은 된다.
+- 유튜브 구조에 기대는 부분: `#shorts-player`, 다음/이전 `#navigation-button-down|up button`, 댓글 단추(`reel-action-bar-view-model` 안 aria-label "댓글"/"comment"), 댓글 창 `engagement-panel-comments-section`. `#shorts-player` 조상의 `contain:layout` 때문에 PIP 동안 그 `contain`(과 `transform` 등)을 푼다. 유튜브가 쇼츠 칸을 돌려쓰며 스타일을 다시 써서 0.25초마다 다시 확인한다. 유튜브는 Trusted Types를 강제해 `innerHTML`을 쓰지 않는다. 구조가 바뀌면 넘기기·댓글만 안 되고 재생은 된다.
 
 **웹 화면 브라우징**(`MainWindow.Browse.cs`): 주소창 왼쪽 뒤로·앞으로·새로 고침 버튼(웹뷰가 보일 때만 켜짐), 주소창은 웹뷰의 현재 주소로 따라 바뀐다(입력 중에는 덮어쓰지 않음). 북마크 줄은 넘치면 휠로 가로 스크롤하고 **내 파일 · 추가 · 편집** 칩은 오른쪽에 고정된다. **편집**은 설정 → 북마크·정보를 열고, 거기서 이름·주소 추가·수정, 순서, 삭제, **기본 사이트 다시 넣기**(없는 기본 사이트만 끝에 추가)를 한다(`SettingsWindow.Bookmarks.cs`).
 
