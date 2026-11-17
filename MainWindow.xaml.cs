@@ -269,7 +269,8 @@ public partial class MainWindow : Window
         InitPlayback(); // 설정·북마크·재생 줄 (MainWindow.Playback.cs)
 
         // 다른 실행(연결 프로그램·더블클릭)이 넘기는 파일을 받고, 실행 인자로 받은 파일이 있으면 연다
-        ((App)System.Windows.Application.Current).Instance.StartServer(path => Dispatcher.BeginInvoke(() => OpenExternal(path)));
+        ((App)System.Windows.Application.Current).Instance.StartServer(path => Dispatcher.BeginInvoke(() => OpenExternal(path)),
+            () => Dispatcher.BeginInvoke(BringToFront));
         if (App.StartupArg is { } arg) OpenExternal(arg);
         if (App.StartupError is { } startupError) SetStatus(startupError);
     }

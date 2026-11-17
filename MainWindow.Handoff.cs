@@ -13,6 +13,12 @@ public partial class MainWindow
         };
     }
 
+    // 열 대상 없이 앱을 다시 실행했을 때 SingleInstance 가 부른다
+    private void BringToFront()
+    {
+        if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
+        Activate();
+    }
     private void OpenExternal(string raw)
     {
         if (!HandoffParser.SafeExternalArgument(raw)) { SetStatus("열기 요청의 길이 또는 형식이 올바르지 않습니다."); return; }

@@ -15,14 +15,17 @@ public sealed class SingleInstance : IDisposable
     private Task? _serverTask;
     public static bool ValidRequest(string raw) => HandoffParser.SafeExternalArgument(raw) &&
         (!HandoffParser.IsProtocol(raw) || HandoffParser.TryParseProtocol(raw, out _, out _));
-    public static bool TrySendToRunning(string path)
+    public static bool TrySendToRunning(string path) => ValidRequest(path) && TrySend(path);
+    /// <summary>열 대상 없이 다시 실행했을 때: 떠 있는 창을 앞으로 부른다(빈 줄 = 창 앞으로). 받았으면 true.</summary>
+    public static bool TryActivateRunning() => TrySend("");
+    private static bool TrySend(string path)
     {
-        if (!ValidRequest(path)) return false;
         try
         {
             using var client = new NamedPipeClientStream(".", PipeName, PipeDirection.Out, PipeOptions.Asynchronous);
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
             client.ConnectAsync(400, timeout.Token).GetAwaiter().GetResult();
+            NativeMethods.AllowSetForegroundWindow(NativeMethods.ASFW_ANY); // 받는 쪽 창이 앞으로 나올 수 있게 전면 권한을 넘긴다
             byte[] bytes = StrictUtf8.GetBytes(path + "\n");
             client.WriteAsync(bytes, timeout.Token).AsTask().GetAwaiter().GetResult();
             client.FlushAsync(timeout.Token).GetAwaiter().GetResult();
@@ -30,7 +33,7 @@ public sealed class SingleInstance : IDisposable
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or OperationCanceledException or TimeoutException or ArgumentException) { return false; }
     }
-    public void StartServer(Action<string> onRequest)
+    public void StartServer(Action<string> onRequest, Action onActivate)
     {
         if (_mutex != null || _stop.IsCancellationRequested) return;
         _mutex = new Mutex(true, MutexName, out bool created);
@@ -61,7 +64,8 @@ public sealed class SingleInstance : IDisposable
                     if (complete && !invalid && !_stop.IsCancellationRequested)
                     {
                         string raw = StrictUtf8.GetString(data.ToArray());
-                        if (ValidRequest(raw)) onRequest(raw);
+                        if (raw.Length == 0) onActivate();
+                        else if (ValidRequest(raw)) onRequest(raw);
                     }
                 }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or OperationCanceledException or ArgumentException or ObjectDisposedException) { if (!_stop.IsCancellationRequested) await Task.Delay(100); }
