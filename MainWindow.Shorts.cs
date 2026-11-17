@@ -7,7 +7,8 @@ namespace blinkpip;
 //  · PIP 에서는 쇼츠 플레이어(#shorts-player)만 창에 꽉 채우고, 마우스를 움직이면 ▲▼💬⏭ 단추를 페이지 안에 띄운다.
 //  · 💬 = 유튜브 자체 댓글 창을 창 오른쪽 칸(CommentsDip)에 붙이고, 호스트는 창을 그만큼 넓힌다("hppshorts:cm:1/0").
 //  · ⏭ = 자동 넘기기. 쇼츠 영상은 loop 라서 끝 → 처음으로 되감기는 순간을 잡아 "다음 동영상" 단추를 누른다. 켜짐 여부는 페이지 localStorage.
-// 유튜브 구조(2026-11-18 실측, 웹뷰): #shorts-player 조상 div 에 contain:layout 이 걸려 position:fixed 가 창 기준이 안 돼서 PIP 동안 contain 을 푼다.
+// 유튜브 구조(2026-11-18 실측, 웹뷰): #shorts-player 조상 div 에 contain:layout 이 걸려 position:fixed 가 창 기준이 안 돼서 PIP 동안 contain 등을 푼다
+// (유튜브가 칸의 style 을 다시 써서 매 틱 다시 푼다).
 // 다음/이전 = #navigation-button-down|up button, 댓글 단추 = reel-action-bar-view-model 안 aria-label 에 "댓글"/"comment",
 // 댓글 창 = ytd-engagement-panel-section-list-renderer[target-id=engagement-panel-comments-section] (visibility 속성으로 열림 판정, 닫기 = #visibility-button button).
 // 구조가 바뀌면 넘기기·댓글만 안 되고 재생은 그대로다.
@@ -108,16 +109,23 @@ public partial class MainWindow
 
             const CSS_ID = '__hpp_shorts_css';
             const uncontained = new Set();
+            // position:fixed 의 기준을 창이 아닌 조상으로 바꿔 버리는 속성들과 그 '없음' 값
+            const FREE = [['contain', 'none'], ['transform', 'none'], ['will-change', 'auto'], ['filter', 'none'], ['perspective', 'none'], ['container-type', 'normal']];
             const layout = (on, cm) => {
                 let s = document.getElementById(CSS_ID);
                 if (!on) {
                     s?.remove(); ui?.remove(); ui = null;
-                    uncontained.forEach(x => x.style.removeProperty('contain')); uncontained.clear();
+                    uncontained.forEach(x => FREE.forEach(([k]) => x.style.removeProperty(k))); uncontained.clear();
                     return;
                 }
+                // 유튜브는 쇼츠 칸(div#0, #1 …)을 돌려쓰며 style 을 다시 써서 넣어 둔 값이 지워진다(2026-11-18 G21dv3Yp8c8 다음 쇼츠에서 재현:
+                // div#7 contain:size layout 이 되살아나 플레이어가 그 칸에 갇히고 폭 0). 그래서 '이미 푼 칸'으로 건너뛰지 않고 매 틱 다시 확인한다.
                 const p = document.querySelector('#shorts-player');
-                for (let x = p?.parentElement; x; x = x.parentElement)
-                    if (!uncontained.has(x) && getComputedStyle(x).contain !== 'none') { x.style.setProperty('contain', 'none', 'important'); uncontained.add(x); }
+                for (let x = p?.parentElement; x; x = x.parentElement) {
+                    const c = getComputedStyle(x);
+                    for (const [k, off] of FREE)
+                        if (c.getPropertyValue(k) !== off) { x.style.setProperty(k, off, 'important'); uncontained.add(x); }
+                }
                 const right = cm ? CM : 0;
                 const css = '#shorts-player{position:fixed!important;top:0!important;left:0!important;bottom:0!important;right:' + right + 'px!important;width:auto!important;height:auto!important;z-index:2147483640!important;background:#000!important;border-radius:0!important}' +
                     '#shorts-player .html5-video-container{position:absolute!important;inset:0!important;width:100%!important;height:100%!important}' +
