@@ -1,6 +1,6 @@
 # blinkpip
 
-**버전 0.6.5** (2026-11-16) · 변경 기록 [CHANGELOG.md](CHANGELOG.md) · 라이선스 [GPL-3.0](LICENSE) · 외부 구성 요소 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+**버전 0.7.0** (2026-11-18) · 변경 기록 [CHANGELOG.md](CHANGELOG.md) · 라이선스 [GPL-3.0](LICENSE) · 외부 구성 요소 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
 
 WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 안에서 두 엔진을 URL로 자동 전환한다.
 
@@ -23,6 +23,16 @@ WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 
 
 **치지직**(`ChzzkRoute.cs`, 2026-11-13 실측): yt-dlp는 생방송 `/live/<채널>`과 다시보기 `/video/<번호>`만 알아본다. 그래서 채널 홈 `/<채널 32자리>`은 생방송 주소로 바꿔 엔진 A로 열고, 클립 등 나머지 치지직 페이지는 엔진 B(웹 화면, DRM 없음)로 연다. 웹 화면에서 둘러보다가 생방송·다시보기 페이지에서 PIP를 켜면 그 주소를 엔진 A로 넘겨 영상만 담는다(웹 페이지째 줄어들지 않게). PIP를 나오면 그 페이지를 웹 화면으로 다시 연다(새로 불러오므로 방송·채팅은 새로 연결). PIP 중 다른 영상을 열었으면 돌아가지 않는다. 19세 방송은 로그인 정보가 엔진 A로 넘어가지 않아 열리지 않을 수 있다.
 
+**유튜브**(`YouTubeRoute.cs`, 2026-11-17 실측): 영상(`watch?v=`, `youtu.be`)·생방송·재생목록 주소는 엔진 A가 연다. 홈·`/feed/…`은 로그인 없는 yt-dlp에게 빈 목록이라("Failed to recognize file format") 홈·피드·채널·검색 등 영상이 아닌 페이지는 엔진 B(웹 화면)로 열고, 거기서 영상 페이지를 보다가 PIP를 켜면 엔진 A로 넘긴다(치지직과 같은 방식). 자막은 올린 자막과 자동 자막을 한국어·영어·일본어·중국어·원어(`-orig`)만 받고(자동 번역까지 받으면 160개 가까이 된다), 설정의 선호 자막 언어가 비어 있으면 한국어를 켠다(`MpvPlayer.cs`의 `ytdl-raw-options`·`slang`).
+
+**유튜브 쇼츠 PIP**(`MainWindow.Shorts.cs`, 2026-11-18 실측): 쇼츠(`/shorts/…`)는 피드 넘기기·댓글을 쓰도록 엔진 B로 열고(확장에서 보낸 쇼츠도), PIP도 웹 화면 그대로 세로 창으로 띄운다(최대 화면 높이의 60%). PIP에서는 쇼츠 플레이어만 창에 채우고, 마우스를 움직이면 페이지 안에 단추가 2.5초 뜬다.
+- ▲▼ 이전·다음 쇼츠, 아래 재생바(⏯·누른 자리로 이동·시간 — 끌면 PIP 창 이동과 겹쳐서 누르기만).
+- 💬 댓글: 유튜브 자체 댓글 창을 오른쪽 340 DIP 칸에 붙이고 창을 그만큼 넓힌다(화면 오른쪽 절반에 있으면 오른쪽 변 고정). 열어 둔 채 다음 쇼츠로 가면 다시 연다. 4초 안에 안 열리면(댓글 꺼진 쇼츠) 칸을 접는다.
+- ⇣ 댓글 자동 스크롤(댓글 칸이 열렸을 때만 보임): 누를 때마다 끔 → 느림(초당 15px) → 보통(30) → 빠름(60). 커서가 댓글 칸 위에 있으면 멈춘다.
+- ⏭ 자동 넘기기: 쇼츠는 끝나면 처음부터 반복하므로 끝 → 처음 되감김을 잡아 다음 쇼츠로 넘긴다. 일반 창의 쇼츠에서도 동작한다.
+- 켜짐 상태(자동 넘기기·자동 스크롤 단계)는 웹뷰 프로필의 `localStorage`에 남는다. 쇼츠 웹 화면에서는 자막 읽어 주기가 동작하지 않는다.
+- 유튜브 구조에 기대는 부분: `#shorts-player`, 다음/이전 `#navigation-button-down|up button`, 댓글 단추(`reel-action-bar-view-model` 안 aria-label "댓글"/"comment"), 댓글 창 `engagement-panel-comments-section`. `#shorts-player` 조상의 `contain:layout` 때문에 PIP 동안 그 `contain`을 푼다. 유튜브는 Trusted Types를 강제해 `innerHTML`을 쓰지 않는다. 구조가 바뀌면 넘기기·댓글만 안 되고 재생은 된다.
+
 **웹 화면 브라우징**(`MainWindow.Browse.cs`): 주소창 왼쪽 뒤로·앞으로·새로 고침 버튼(웹뷰가 보일 때만 켜짐), 주소창은 웹뷰의 현재 주소로 따라 바뀐다(입력 중에는 덮어쓰지 않음). 북마크 줄은 넘치면 휠로 가로 스크롤하고 **내 파일 · 추가 · 편집** 칩은 오른쪽에 고정된다. **편집**은 설정 → 북마크·정보를 열고, 거기서 이름·주소 추가·수정, 순서, 삭제, **기본 사이트 다시 넣기**(없는 기본 사이트만 끝에 추가)를 한다(`SettingsWindow.Bookmarks.cs`).
 
 ## 파일
@@ -32,6 +42,8 @@ WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 
 | 파일 | 역할 |
 | --- | --- |
 | `MainWindow.xaml(.cs)` | 창, 라우팅, PIP, 클릭 투과, 배경화면, 스냅, 비율 유지, 자막 크기, OTT 키 브릿지 |
+| `ChzzkRoute.cs`, `YouTubeRoute.cs` | 치지직·유튜브 주소를 엔진 A/B로 가르기 |
+| `MainWindow.Shorts.cs` | 유튜브 쇼츠 PIP(페이지 주입 스크립트, 댓글 칸만큼 창 넓히기) |
 | `MainWindow.Browse.cs`, `SettingsWindow.Bookmarks.cs` | 웹 화면 뒤로·앞으로·새로 고침과 주소 따라가기, 북마크 줄 스크롤·편집 칩, 설정의 북마크 추가·수정·기본 사이트 다시 넣기 |
 | `MainWindow.Playback.cs` | 재생 줄(재생·탐색·건너뛰기 간격·속도·볼륨), 열기, 재생 목록 패널, 자막·소리 메뉴, 스크린샷과 토스트, 전체 화면, 이어 보기, 설정 연결 |
 | `ShortcutCatalog.cs`, `ShortcutStore.cs`, `MainWindow.Shortcuts.cs`, `MpvPlayer.Shortcuts.cs`, `SettingsWindow.Shortcuts.cs` | 단일 기본 키 표, 변경분 저장·충돌 검사, WPF/IME/OSK/mpv 연결, 검색·키 입력·복원 편집기 |
@@ -44,7 +56,7 @@ WPF(.NET 8) 하이브리드 미디어 플레이어. 한 개의 보더리스 창 
 | `MpvPlayer.Subtitles.cs`, `SubtitlePracticeController.cs`, `SubtitlePracticeSettings.cs`, `SubtitlePracticeWindow.cs`, `MainWindow.Subtitles.cs` | 자막 속성 관찰, 문장 반복 상태, 연습 설정·창·메뉴 연결 |
 | `MpvPlayer.cs` | libmpv P/Invoke 래퍼(옵션, 이벤트 스레드, 로그, 앰비언트 필터, SponsorBlock 설정, 재생 목록·트랙) |
 | `AppSettings.cs`, `Bookmark.cs`, `RecentStore.cs`, `ResumeStore.cs` | 설정, 북마크, 최근 재생, 이어 보기 저장소(`%LocalAppData%\blinkpip\` 아래 json) |
-| `MediaFiles.cs`, `MediaSession.cs`, `FileAssociation.cs`, `SingleInstance.cs` | 미디어 확장자·폴더 목록·m3u, 윈도우 미디어 컨트롤 연동, 연결 프로그램, 단일 실행 |
+| `MediaFiles.cs`, `MediaSession.cs`, `FileAssociation.cs`, `SingleInstance.cs` | 미디어 확장자·폴더 목록·m3u, 윈도우 미디어 컨트롤 연동, 연결 프로그램, 단일 실행(다시 실행하면 새 창 대신 떠 있는 창을 앞으로 — 두 창이면 전역 단축키가 오류 1409로 겹친다) |
 | `ThemeManager.cs`, `Themes/Dark.xaml` | 색 테마(A/B/C)와 어두운 테마 스타일 |
 | `NativeMethods.cs`, `app.manifest` | Win32(핫키, WorkerW/Progman 탐색, 마우스 훅, DWM), PerMonitorV2 DPI 선언 |
 | `Assets/app.ico`, `Assets/app-icon-1024.png` | 앱 아이콘(실행 파일·창·작업 표시줄, 16~256px 9개 크기)과 그 원본(투명 배경 1024px). ChatGPT 웹 시안 4번(유리 창 + 재생)을 정사각형으로 잘라 만들었다 |
@@ -163,7 +175,7 @@ mpv 화면에서는 `Ctrl+↑/↓`(영상 창 포커스)로도 자막 크기를 
 
 **PIP 아래 자막 줄**: 설정 → PIP → "자막을 창 아래에 표시"(기본 켬)이면 PIP에서 영상 안 자막을 숨기고 창 바로 아래(공간이 없으면 바로 위) 줄에 글자로 보여 준다(`SubtitleStrip`, 마우스 통과). mpv는 `sub-text`를, 웹뷰는 자막 요소 글자를 200ms마다 읽어 `postMessage("hppsub:…")`로 받는다(`MainWindow.PipExtras.cs`의 `SubtitleReadHosts` = 디즈니+·쿠팡플레이·웨이브·넷플릭스 출처만 받음, 500자 제한). PIP에 들어갈 때 우하단 기본 위치면 줄이 들어갈 만큼 창을 올린다. 이때 `Ctrl+Alt+↑/↓`는 줄 글자 크기(10~40, ±2)를 바꾼다. 이미지 자막은 글자가 없어 줄에 보이지 않는다.
 
-**웹 영상 PIP 비율 맞춤**: 넷플릭스·디즈니+·쿠팡플레이·웨이브·티빙(`AspectHosts`) 페이지가 가장 큰 `video`의 원본 크기(`videoWidth×videoHeight`)를 1초마다 확인해 바뀔 때만 `postMessage("hppaspect:WxH")`로 보낸다. PIP에서는 이 비율로 너비를 유지한 채 창 높이를 맞춰 위아래 검은 띠를 없앤다(가장자리 끌기도 같은 비율 유지). 일반 창은 사이트 목록 화면도 보여 주므로 맞추지 않는다. 재생 화면을 벗어나면 `0x0`을 보내 맞춤을 멈춘다.
+**웹 영상 PIP 비율 맞춤**: 넷플릭스·디즈니+·쿠팡플레이·웨이브·티빙·유튜브 쇼츠(`AspectHosts`, 유튜브는 `/shorts/`만) 페이지가 가장 큰 `video`의 원본 크기(`videoWidth×videoHeight`)를 1초마다 확인해 바뀔 때만 `postMessage("hppaspect:WxH")`로 보낸다. PIP에서는 이 비율로 너비를 유지한 채 창 높이를 맞춰 위아래 검은 띠를 없앤다(가장자리 끌기도 같은 비율 유지). 일반 창은 사이트 목록 화면도 보여 주므로 맞추지 않는다. 재생 화면을 벗어나면 `0x0`을 보내 맞춤을 멈춘다.
 
 **웹 PIP 플레이어 채우기**: 티빙 라이브처럼 재생 중에도 고정 머리글·채널 목록이 붙은 일반 페이지 구조면 PIP에 머리글이 들어가고 플레이어가 잘린다. 그래서 PIP일 때(`window.__hppPip`, `PushOttSubConfig`가 넘김) `OttViewportScript`의 `fillPip()`가 1초마다 영상과 같은 크기인 가장 바깥 조상에 `__hpp_fill`(고정 위치·창 전체·최상위, 스크롤 막음)을 붙인다. 영상이 이미 창의 90% 이상을 채우면(넷플릭스·디즈니+·티빙 다시보기) 건드리지 않고, PIP를 나오면 떼어 원래 페이지로 돌린다. 사이트 자체 컨트롤은 그대로 남는다. 2026-11-14 티빙 라이브·다시보기 실측.
 
