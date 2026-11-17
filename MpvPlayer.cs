@@ -78,6 +78,13 @@ public partial class MpvPlayer : IDisposable
         SetOption("keep-open", "yes");
         SetOption("ytdl", "yes");                 // 유튜브 스트리밍 활성화
         SetOption("ytdl-format", "bestvideo[height<=?1440]+bestaudio/best");
+        // 유튜브 자동 자막도 받는다(올린 자막이 없는 뉴스 등은 자동 자막뿐). 자동 번역까지 다 받으면 160개 가까이 되어
+        // 한국어·영어·일본어·중국어·원어(-orig)만 고른다. 값 안에 쉼표를 쓰면 목록이 갈라져 정규식 | 로 묶는다.
+        // sub-langs 를 주면 ytdl_hook 의 "--sub-langs all" 이 빠져, 올린 자막도 이 언어들만 남는다.
+        SetOption("ytdl-raw-options", "write-auto-subs=,sub-langs=(ko|en|ja|zh).*|.*-orig");
+        // 선호 자막 언어를 비워 두면 mpv 는 유튜브 자막 트랙을 하나도 켜지 않아 자막 읽기가 조용하다 → 기본은 한국어.
+        // 설정의 선호 자막 언어(SetLangs)가 있으면 그 값이 덮는다.
+        SetOption("slang", "ko,kor,ko-orig");
         // wid 로 붙인 mpv 자식 창이 키 입력을 받으므로 기본 키 바인딩(스페이스·방향키 등)을 켠다
         SetOption("input-default-bindings", "yes");
         SetOption("input-vo-keyboard", "yes");
