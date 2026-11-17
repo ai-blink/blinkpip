@@ -84,12 +84,17 @@ const HPP_HANDOFF = (() => {
     const checked = publicUrl(raw);
     if (!checked.ok) return null;
     const url = new URL(checked.value);
-    let id = null;
+    let id = null, shorts = false;
     if (['youtube.com', 'www.youtube.com', 'm.youtube.com'].includes(url.hostname)) {
       if (url.pathname === '/watch') id = url.searchParams.get('v');
-      else id = /^\/(?:embed|shorts)\/([A-Za-z0-9_-]{11})(?:\/|$)/.exec(url.pathname)?.[1];
+      else {
+        const m = /^\/(embed|shorts)\/([A-Za-z0-9_-]{11})(?:\/|$)/.exec(url.pathname);
+        id = m?.[2]; shorts = m?.[1] === 'shorts';
+      }
     } else if (url.hostname === 'youtu.be') id = /^\/([A-Za-z0-9_-]{11})(?:\/|$)/.exec(url.pathname)?.[1];
-    return id && /^[A-Za-z0-9_-]{11}$/.test(id) ? 'https://www.youtube.com/watch?v=' + id : null;
+    if (!id || !/^[A-Za-z0-9_-]{11}$/.test(id)) return null;
+    // 쇼츠는 앱이 웹 화면의 쇼츠 피드로 연다(넘기기·댓글·쇼츠 PIP). 나머지는 mpv 가 여는 watch 주소로
+    return shorts ? 'https://www.youtube.com/shorts/' + id : 'https://www.youtube.com/watch?v=' + id;
   }
   function fromSnapshot(snapshot, include = {}) {
     if (!snapshot?.connected) return fail('선택한 영상이 페이지에서 사라졌습니다.');

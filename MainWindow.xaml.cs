@@ -104,7 +104,8 @@ public partial class MainWindow : Window
             const FILL = '__hpp_fill';
             const fillPip = () => {
                 const old = document.querySelector('.' + FILL);
-                if (!window.__hppPip) {
+                // 유튜브 쇼츠는 ShortsScript(MainWindow.Shorts.cs)가 따로 배치한다(댓글 칸 때문에 창 전체를 채우면 안 된다)
+                if (!window.__hppPip || (/(^|\.)youtube\.com$/.test(location.hostname) && location.pathname.startsWith('/shorts/'))) {
                     old?.classList.remove(FILL);
                     document.getElementById('__hpp_fill_css')?.remove();
                     return;
@@ -324,6 +325,7 @@ public partial class MainWindow : Window
             var env = await CoreWebView2Environment.CreateAsync(null, dir);
             await DrmWebView.EnsureCoreWebView2Async(env);
             await DrmWebView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(OttViewportScript);
+            await DrmWebView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(ShortsScript); // MainWindow.Shorts.cs
             HookOttMessages(DrmWebView.CoreWebView2);
             InitBrowse(DrmWebView.CoreWebView2); // MainWindow.Browse.cs
             _diagnostics.SetEngineVersion(env.BrowserVersionString, web: true);
@@ -439,6 +441,7 @@ public partial class MainWindow : Window
     {
         if (_lockOverlay == null) return;
         if (!_isPipMode || _isClickThrough || _isWallpaperMode || _closing) { HideOverlay(); HidePipControls(); return; }
+        if (_shortsComments && !ShortsPip) OnShortsComments(false); // 댓글 칸을 연 채 유튜브 밖·mpv 로 옮겨 가면 넓힌 창을 되돌린다(MainWindow.Shorts.cs)
 
         NativeMethods.GetCursorPos(out var pt);
         NativeMethods.GetWindowRect(_hwnd, out var r);
@@ -536,6 +539,7 @@ public partial class MainWindow : Window
     {
         if (_pipLocked) SetLocked(false); // 잠금은 PIP 전용 — 나가기 전에 풀어 자식 창을 다시 활성화한다
         _isPipMode = false;
+        _shortsComments = false; // 넓혔던 댓글 칸은 아래 RestoreRect 가 원래 창 크기로 되돌린다
         HideOverlay();
         HidePipControls();
         UpdateTimer();
@@ -564,7 +568,7 @@ public partial class MainWindow : Window
     // PIP 크기를 끌어서 바꾸면 그 너비(DIP)를 설정에 저장해 다음 PIP 도 같은 크기로 연다
     private void RememberPipWidth()
     {
-        if (!_isPipMode || _closing || !NativeMethods.GetWindowRect(_hwnd, out var r)) return;
+        if (!_isPipMode || _closing || ShortsPip || !NativeMethods.GetWindowRect(_hwnd, out var r)) return; // 세로 쇼츠 너비는 가로 PIP 기본값으로 저장하지 않는다
         int w = Math.Clamp((int)Math.Round((r.Right - r.Left) / Scale), 320, 960);
         if (w == _settings.PipWidth) return;
         _settings.PipWidth = w;
@@ -580,7 +584,7 @@ public partial class MainWindow : Window
         var (mx, my) = Chrome();
         double va = TargetVideoAspect;
         double ratio = va > 0 ? va : (w0 - mx) / Math.Max(1, h0 - my);
-        int minW = (int)(240 * Scale);
+        int minW = (int)(240 * Scale + ShortsCommentsPx); // 쇼츠 댓글 칸이 열려 있으면 영상 부분이 240 아래로 줄지 않게
         var wa = System.Windows.Forms.Screen.FromHandle(_hwnd).WorkingArea;
         int w, h;
         if ((_resizeEdge & 3) != 0)
@@ -810,7 +814,7 @@ public partial class MainWindow : Window
     private (double mx, double my) Chrome()
     {
         double s = Scale, m = RootGrid.Margin.Left * 2 * s;
-        return (m, m + ControlBarRow.Height.Value * s);
+        return (m + ShortsCommentsPx, m + ControlBarRow.Height.Value * s); // 쇼츠 PIP 댓글 칸(MainWindow.Shorts.cs)
     }
 
     // 새 영상이 열리거나 앰비언트가 바뀌면 현재 너비를 유지한 채 영상 비율에 맞게 높이를 조정한다
@@ -823,7 +827,7 @@ public partial class MainWindow : Window
         var wa = System.Windows.Forms.Screen.FromHandle(_hwnd).WorkingArea;
         int w = r.Right - r.Left;
         int h = (int)Math.Round((w - mx) / va + my);
-        int maxH = (int)(wa.Height * 0.9);
+        int maxH = (int)(wa.Height * (ShortsPip ? 0.6 : 0.9)); // 쇼츠 PIP 는 세로라 저장된 PIP 너비로 맞추면 너무 크다
         if (h > maxH) { h = maxH; w = (int)Math.Round((h - my) * va + mx); } // 세로 영상 등 너무 커지면 줄인다
         int y = Math.Min(r.Top, wa.Bottom - h);                              // 화면 밖으로 나가면 위로 올린다
         SetRect(r.Left, Math.Max(wa.Top, y), w, h);
@@ -834,7 +838,7 @@ public partial class MainWindow : Window
         double va = TargetVideoAspect;
         if ((va <= 0 && _aspect <= 0) || _isWallpaperMode || NativeMethods.IsZoomed(_hwnd)) return;
         var (mx, my) = Chrome();
-        int HFromW(int w) => va > 0 ? (int)Math.Round((w - mx) / va + my) : (int)Math.Round(w / _aspect);
+        int HFromW(int w) => va > 0 ? (int)Math.Round(Math.Max(1, w - mx) / va + my) : (int)Math.Round(w / _aspect); // 쇼츠 댓글 칸(mx)보다 좁아도 음수가 되지 않게
         int WFromH(int h) => va > 0 ? (int)Math.Round((h - my) * va + mx) : (int)Math.Round(h * _aspect);
 
         var r = Marshal.PtrToStructure<NativeMethods.RECT>(lParam);

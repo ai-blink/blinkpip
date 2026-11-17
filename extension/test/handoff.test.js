@@ -31,6 +31,12 @@ test('once-encoded protocol and exact false', () => {
   assert.equal(wire.searchParams.get('pip'), '0'); assert.equal(wire.searchParams.get('t'), '0');
   assert.deepEqual([...wire.searchParams.keys()], ['v', 'url', 't', 'sub', 'speed', 'pip']);
 });
+test('YouTube shorts keep the shorts page, other pages become watch', () => {
+  const snap = pageUrl => ({ connected: true, pageUrl, currentSrc: 'blob:https://www.youtube.com/x', hasSourceObject: true, protected: false });
+  assert.equal(h.fromSnapshot(snap('https://www.youtube.com/shorts/abcdefghijk')).value.url, 'https://www.youtube.com/shorts/abcdefghijk');
+  assert.equal(h.fromSnapshot(snap('https://www.youtube.com/embed/abcdefghijk')).value.url, 'https://www.youtube.com/watch?v=abcdefghijk');
+  assert.equal(h.fromSnapshot(snap('https://youtu.be/abcdefghijk')).value.url, 'https://www.youtube.com/watch?v=abcdefghijk');
+});
 test('omitted metadata stays omitted', () => assert.deepEqual([...new URL(h.protocol({ v: 1, url: 'https://example.test/v' }).href).searchParams.keys()], ['v', 'url']));
 test('exact URL byte bound', () => { const base = 'https://example.test/'; assert.equal(h.publicUrl(base + 'a'.repeat(4096 - base.length)).ok, true); assert.equal(h.publicUrl(base + 'a'.repeat(4097 - base.length)).ok, false); });
 test('Unicode UTF8 URL bound', () => assert.equal(h.publicUrl('https://example.test/' + '한'.repeat(1500)).ok, false));

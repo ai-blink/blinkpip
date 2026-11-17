@@ -144,7 +144,7 @@ public partial class MainWindow
     // 자막 구조를 실측해 OttViewportScript 가 읽을 수 있게 한 사이트
     private static readonly string[] SubtitleReadHosts = { "disneyplus.com", "coupangplay.com", "wavve.com", "netflix.com" };
     // 영상 원본 크기를 받아 PIP 높이를 맞추는 사이트(재생 화면에서 가장 큰 video 가 본편임을 실측)
-    private static readonly string[] AspectHosts = { "netflix.com", "disneyplus.com", "coupangplay.com", "wavve.com", "tving.com" };
+    private static readonly string[] AspectHosts = { "netflix.com", "disneyplus.com", "coupangplay.com", "wavve.com", "tving.com", "youtube.com" };
 
     // 페이지(OttViewportScript)가 보내는 메시지: "hppsub:<자막 글자>"(SubtitleReadHosts), "hppaspect:<W>x<H>"(AspectHosts 영상 원본 크기)
     private void HookOttMessages(CoreWebView2 web)
@@ -162,8 +162,11 @@ public partial class MainWindow
                 SetStripText(text);
                 SpeakSubtitle(text); // 자막 읽어 주기 (MainWindow.SubtitleTts.cs)
             }
-            else if (msg.StartsWith("hppaspect:", StringComparison.Ordinal) && AspectHosts.Any(d => HostIs(src, d)))
+            else if (msg.StartsWith("hppaspect:", StringComparison.Ordinal) && AspectHosts.Any(d => HostIs(src, d)) &&
+                     (!HostIs(src, "youtube.com") || YouTubeRoute.IsShorts(src))) // 유튜브는 쇼츠만(홈·채널의 미리보기 영상 비율을 따라가지 않게)
                 OnWebVideoSize(msg.Substring(10));
+            else if (msg.StartsWith("hppshorts:cm:", StringComparison.Ordinal) && HostIs(src, "youtube.com"))
+                OnShortsComments(msg.EndsWith('1')); // MainWindow.Shorts.cs
         };
     }
 
