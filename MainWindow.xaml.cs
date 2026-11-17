@@ -300,6 +300,7 @@ public partial class MainWindow : Window
         }
         isOtt = (uri.Scheme is "http" or "https") && WebEngineHosts.Any(d => HostIs(uri, d));
         if (uri.Scheme is "http" or "https") ChzzkRoute.Apply(uri, ref target, ref isOtt); // 채널 홈 → 생방송, 클립 → 웹뷰
+        if (uri.Scheme is "http" or "https") YouTubeRoute.Apply(uri, ref isOtt); // 홈·피드 등 영상 아닌 페이지 → 웹뷰
         return true;
     }
 
