@@ -182,7 +182,19 @@ public partial class MainWindow : Window
     private NativeMethods.RECT _pipRestore, _wallRestore; // 상태별 복원 위치(px) — 서로 덮어쓰지 않도록 분리
     private int _wallStyleBackup;
     private LockOverlay? _lockOverlay;
-    private bool _pipLocked, _overlayVisible;
+    private bool _pipLocked, _overlayVisible, _cursorInPip;
+
+    // 웹 플레이어(디즈니+ 등)는 mouseleave/mouseout 으로 컨트롤 숨김 타이머를 건다 — 커서가 창 밖으로 나가거나 웹뷰가 비활성화되면 그 신호가 안 와서 직접 보낸다
+    private async void SendWebMouseLeave()
+    {
+        if (_closing || DrmWebView?.CoreWebView2 == null) return;
+        const string js = @"(()=>{try{const t=[document,document.documentElement,document.body];
+            for(const n of ['pointerout','pointerleave','mouseout','mouseleave'])
+                for(const e of t){ if(e) e.dispatchEvent(new MouseEvent(n,{bubbles:n.endsWith('out'),relatedTarget:null,clientX:-1,clientY:-1})); }
+            document.dispatchEvent(new MouseEvent('mousemove',{clientX:-1,clientY:-1}));}catch(e){}})();";
+        try { await DrmWebView.CoreWebView2.ExecuteScriptAsync(js); }
+        catch (Exception) { /* 페이지 전환·종료 중 — 무시 */ }
+    }
     private DateTime _lastHover;
     private IntPtr _mouseHook;
     private NativeMethods.LowLevelMouseProc? _mouseProc; // GC 로 수거되지 않게 필드로 유지
@@ -431,7 +443,7 @@ public partial class MainWindow : Window
         if (on && !_isPipMode) return;
         _pipLocked = on;
         _lockOverlay?.SetLocked(on);
-        if (on) HidePipControls(); // 잠금은 마우스 UI 를 막는다
+        if (on) { HidePipControls(); SendWebMouseLeave(); } // 잠금은 마우스 UI 를 막는다 — 비활성화되면 웹이 «마우스 나감»을 못 받아 UI 가 남는다
         NativeMethods.EnumChildWindows(_hwnd, (h, _) => { NativeMethods.EnableWindow(h, !on); return true; }, IntPtr.Zero);
         SetStatus(on ? "PIP 잠금 (Ctrl+Alt+L 또는 자물쇠로 해제)" : "");
     }
@@ -452,6 +464,10 @@ public partial class MainWindow : Window
         bool onButton = _overlayVisible && root == _lockOverlay.Hwnd;
         bool onControls = _pipControlsVisible && (root == _pipControls?.Hwnd || _pipControls?.IsSeeking == true);
         bool inside = inPip || onButton || onControls;
+
+        // PIP 위 → 밖으로 나간 순간 웹에 «마우스 나감»을 알린다(안 보내면 디즈니+ 같은 플레이어 UI 가 가끔 안 사라진다)
+        if (_cursorInPip && !inPip) SendWebMouseLeave();
+        _cursorInPip = inPip;
 
         if (inside)
         {
